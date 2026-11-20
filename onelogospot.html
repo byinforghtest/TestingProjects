@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob: https://utxhqjnqkixjojoqhcqz.supabase.co; connect-src 'self' data: blob: https://utxhqjnqkixjojoqhcqz.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta name="description" content="OneLogoSpot, a BYINFORGH product. Upload photos, add your studio logo automatically, and send clients a gallery.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230D0E0F'/%3E%3Crect x='12' y='22' width='30' height='26' rx='6' fill='%23fff'/%3E%3Crect x='46' y='12' width='4' height='40' fill='%23fff'/%3E%3C/svg%3E">
 <title>OneLogoSpot</title>
@@ -326,6 +328,7 @@ td:first-child{font-weight:600;white-space:nowrap}
       </header>
       <div class="banner" id="brandBanner" hidden><div><b>Add your logo before you upload</b><span>OneLogoSpot puts your logo on every photo. Set it up once in Settings.</span></div><button class="btn primary" data-act="goto-settings">Open Settings</button></div>
       <p class="sub" id="brandNote" hidden></p>
+      <p class="sub" id="usageLine" hidden></p>
       <div class="up-grid">
         <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
           <div class="panel">
@@ -435,15 +438,33 @@ td:first-child{font-weight:600;white-space:nowrap}
     <section class="page" id="p-admin" hidden>
       <header class="ph">
         <p class="eyebrow">Master admin</p>
-        <h1>All studios</h1>
-        <p class="lede">See every studio account, what it uses, and deactivate, reactivate or delete it. Only the master login can open this page.</p>
+        <h1>Platform overview</h1>
+        <p class="lede">Who has registered, how much storage each studio uses, and controls to approve, deactivate or delete accounts. Only the master login can open this page.</p>
       </header>
       <div class="stats" id="admStats"></div>
+      <div class="cols2">
+        <div class="panel" id="admStorage"></div>
+        <div class="panel">
+          <h2>New studios, last 30 days</h2>
+          <div id="admChart"></div>
+          <div class="switchrow">
+            <div class="t"><b id="lblApprove">Approve new studios before they can use the app</b><span>Turn on if you get spam sign-ups. New accounts then wait until you press Approve.</span></div>
+            <button class="switch" id="swApprove" role="switch" aria-checked="false" aria-labelledby="lblApprove" data-adm="approval"></button>
+          </div>
+        </div>
+      </div>
       <div class="panel">
-        <div class="actions"><div class="field" style="flex:1 1 240px"><label for="admQ">Search</label><input id="admQ" type="text" placeholder="Studio name or email" autocomplete="off"></div><button class="btn" id="admRefresh" type="button">Refresh</button></div>
-        <div class="tbl"><table id="admTbl"><thead><tr><th>Studio</th><th>Status</th><th>Shoots</th><th>Photos</th><th>Storage</th><th>Opens</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="admBody"></tbody></table></div>
+        <h2>Studios</h2>
+        <div class="actions">
+          <div class="field" style="flex:1 1 220px"><label for="admQ">Search</label><input id="admQ" type="text" placeholder="Studio name or email" autocomplete="off"></div>
+          <div class="field"><label for="admFilter">Show</label><select id="admFilter"><option value="all">All studios</option><option value="active">Active</option><option value="pending">Waiting for approval</option><option value="disabled">Deactivated</option><option value="near">Storage over 80%</option><option value="never">Never logged in</option></select></div>
+          <div class="field"><label for="admSort">Sort by</label><select id="admSort"><option value="new">Newest first</option><option value="storage">Most storage</option><option value="photos">Most photos</option><option value="login">Last login</option><option value="name">Name</option></select></div>
+          <button class="btn" id="admExport" type="button">Export CSV</button><button class="btn" id="admRefresh" type="button">Refresh</button>
+        </div>
+        <div class="tbl"><table id="admTbl"><thead><tr><th>Studio</th><th>Status</th><th>Registered</th><th>Shoots</th><th>Photos</th><th>Storage used</th><th>Opens</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="admBody"></tbody></table></div>
       </div>
       <div class="panel" id="admShoots" hidden></div>
+      <div class="panel" id="admLog"></div>
     </section>
 
     <!-- SETUP -->
@@ -929,6 +950,7 @@ $('#bWa').addEventListener('input',e=>{settings.whatsapp=e.target.value.replace(
 function resetBatch(){batch.items.forEach(i=>URL.revokeObjectURL(i.url));batch.items=[];batch.phase='idle';batch.sessionId=null;$('#notice').hidden=true;$('#doneCard').hidden=true;renderBatch();}
 function addFiles(list){
   if(!brandReady()){toast('Add your logo in Settings first.');go('settings');return;}
+  if(CLOUDON&&studioRow&&studioRow.storage_limit_mb&&state.photos.reduce((t,p)=>t+p.size+(p.thumbSize||0),0)>=studioRow.storage_limit_mb*1048576){toast('Your storage allowance is full. Delete old shoots or ask BYINFORGH for more space.');return;}
   if(batch.phase==='processing'){toast('Wait for the current batch to finish');return;}
   if(batch.phase==='done')resetBatch();
   let bad=0,over=0;
@@ -1056,7 +1078,7 @@ window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('drop',e=>e.preventDefault());
 
 /* ---------- gallery ---------- */
-function renderNavCount(){$('#navCount').textContent=state.photos.length?String(state.photos.length):'';}
+function renderNavCount(){$('#navCount').textContent=state.photos.length?String(state.photos.length):'';renderUsage();}
 function renderGallery(){
   const sessions=[...state.sessions].sort((a,b)=>b.createdAt-a.createdAt);
   if(state.filter!=='all'&&!sessions.some(s=>s.id===state.filter))state.filter='all';
@@ -1428,7 +1450,7 @@ async function loadCloudData(){
   state.sessions=sh.map(mapShoot);state.photos=ph.map(mapPhoto);
 }
 async function loadStudio(){
-  const rows=await http('/rest/v1/studios?id=eq.'+sess.user.id+'&select=business_name,line2,logo_mode,logo_path,logo_w,logo_h,settings,storage_limit_mb,disabled');
+  const rows=await http('/rest/v1/studios?id=eq.'+sess.user.id+'&select=business_name,line2,logo_mode,logo_path,logo_w,logo_h,settings,storage_limit_mb,disabled,pending');
   const r=rows&&rows[0];if(!r)throw new Error('Your studio record is missing. Run the setup SQL again.');
   studioRow=r;
   Object.assign(brand,{mode:r.logo_mode||'text',name:r.business_name||'',line2:r.line2||'',img:'',iw:r.logo_w||0,ih:r.logo_h||0,path:r.logo_path||''});
@@ -1535,6 +1557,7 @@ async function openCloudClient(code,preview,banner,pw,wrong){
   try{g=await http('/rest/v1/rpc/get_gallery',{method:'POST',anon:true,json:{p_code:code,p_password:pw||null,p_count:!preview}});}
   catch(e){root.innerHTML=banner+'<div class="cl-hero"><h1>Could not open</h1><p>Check your internet connection and try again.</p></div><div class="cl-foot">'+CL_FOOT+'</div>';bind();return;}
   const bh=cloudBrandHtml(g.studio);
+  if(g.status==='throttled'){root.innerHTML=banner+`<div class="cl-top">${bh}</div><div class="cl-hero"><h1>Too many attempts</h1><p>Please wait 15 minutes and try again, or ask the studio for the password.</p></div><div class="cl-foot">${CL_FOOT}</div>`;bind();return;}
   if(g.status!=='ok'&&g.status!=='locked'){
     root.innerHTML=banner+`<div class="cl-top"></div><div class="cl-hero"><h1>Gallery not available</h1><p>This link is closed, has expired, or does not exist. Ask the studio to send it again.</p></div><div class="cl-foot">${CL_FOOT}</div>`;bind();return;
   }
@@ -1615,14 +1638,14 @@ function consumeAuthHash(){
 }
 async function enterStudio(){
   await loadStudio();
-  if(studioRow.disabled){storeSess(null);showAuth('in','This account has been deactivated. Contact BYINFORGH.');return;}
+  isAdmin=false;try{isAdmin=(await http('/rest/v1/rpc/is_admin',{method:'POST',json:{}}))===true;}catch(e){}
+  if(studioRow.disabled&&!isAdmin){storeSess(null);showAuth('in',studioRow.pending?'Your account is waiting for approval from BYINFORGH. You can log in once it is approved.':'This account has been deactivated. Contact BYINFORGH.');return;}
   await Promise.all([fontsReady(),loadBrandImg()]);
   await loadCloudData();
   assetsReady=true;sceneBase=scene(7,1200,800);prevBase=sceneBase;
   $('#auth').hidden=true;$('#client').hidden=true;$('#shell').hidden=false;
   $('#acctLine').hidden=false;$('#acctLine').textContent='Signed in as '+sess.user.email+'.';
   syncControls();redrawPreview();renderDock();renderNavCount();renderBrandBanner();
-  isAdmin=false;try{isAdmin=(await http('/rest/v1/rpc/is_admin',{method:'POST',json:{}}))===true;}catch(e){}
   $('#navAdmin').hidden=!isAdmin;
   go(isAdmin?'admin':(brandReady()?'upload':'settings'));
 }
@@ -1647,53 +1670,101 @@ async function cloudInit(){
   showAuth('in');
 }
 
+/* ---------- storage line for studios ---------- */
+function renderUsage(){
+  const el=$('#usageLine');if(!el)return;
+  if(!CLOUDON||!studioRow||!studioRow.storage_limit_mb){el.hidden=true;return;}
+  const used=state.photos.reduce((t,p)=>t+p.size+(p.thumbSize||0),0),lim=studioRow.storage_limit_mb*1048576,pct=used/lim*100;
+  el.hidden=false;el.style.color=pct>=80?'var(--warn)':'';
+  el.textContent='Storage: '+fmtBytes(used)+' of '+fmtBytes(lim)+' used.'+(pct>=80?' Almost full. Delete old shoots or ask BYINFORGH for more space.':'');
+}
+
 /* ---------- master admin ---------- */
 let isAdmin=false;
-const adm={rows:[],open:null,q:''};
+const adm={rows:[],stats:null,log:[],open:null,q:'',filter:'all',sort:'new'};
 const rpc=(name,json)=>http('/rest/v1/rpc/'+name,{method:'POST',json:json||{}});
+const admStatus=r=>r.pending?['draft','Waiting']:r.disabled?['failed','Deactivated']:['live','Active'];
+const admPct=r=>r.limit_mb?Math.min(100,r.storage_bytes/(r.limit_mb*1048576)*100):0;
+const meterColor=p=>p>=95?'var(--bad)':p>=80?'var(--warn)':'var(--ink)';
+const tms=t=>t?Date.parse(t):0;
+const ADM_FILTER={all:()=>true,active:r=>!r.disabled,pending:r=>r.pending,disabled:r=>r.disabled&&!r.pending,near:r=>admPct(r)>=80,never:r=>!r.last_sign_in};
+const ADM_SORT={new:(a,b)=>tms(b.created_at)-tms(a.created_at),storage:(a,b)=>b.storage_bytes-a.storage_bytes,photos:(a,b)=>b.photos-a.photos,login:(a,b)=>tms(b.last_sign_in)-tms(a.last_sign_in),name:(a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email))};
 function renderAdmin(){if(!isAdmin){go('upload');return;}admLoad();}
 async function admLoad(){
-  try{adm.rows=await rpc('admin_list_studios');}catch(e){toast('Could not load studios. '+(e.message||''));adm.rows=[];}
+  try{
+    const [rows,stats,log]=await Promise.all([rpc('admin_list_studios'),rpc('admin_stats'),rpc('admin_recent_log')]);
+    adm.rows=rows||[];adm.stats=stats;adm.log=log||[];
+  }catch(e){toast('Could not load admin data. '+(e.message||''));}
+  renderAdminAll();
+}
+function renderAdminAll(){
+  const s=adm.stats;
+  if(s){
+    $('#admStats').innerHTML=[['Registered studios',s.studios_total],['New, last 7 days',s.new_7d],['New, last 30 days',s.new_30d],['Logged in, last 30 days',s.active_30d],['Never logged in',s.never_logged_in],['Waiting for approval',s.pending],['Deactivated',s.deactivated],['Shoots',s.shoots],['Photos',s.photos],['Client link opens',s.views]].map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    const cap=(s.cap_mb||0)*1048576,pct=cap?s.storage_bytes/cap*100:0;
+    $('#admStorage').innerHTML=`<h2>Platform storage</h2><div class="stats"><div class="stat"><b>${fmtBytes(s.storage_bytes)}</b><span>Used, ${s.files} files</span></div><div class="stat"><b>${pct.toFixed(1)}%</b><span>Of your ${fmtBytes(cap)} cap</span></div><div class="stat"><b>${(s.allocated_mb/1024).toFixed(1)} GB</b><span>Promised to studios</span></div></div>`+
+      `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100,pct)}%;background:${meterColor(pct)}"></i></div>`+
+      (pct>=80?'<p class="notice">Platform storage is above 80% of your cap. Upgrade the Supabase plan or lower studio allowances before it fills.</p>':'')+
+      (s.allocated_mb>s.cap_mb?'<p class="sub">You have promised studios more storage than your plan holds. That is fine while usage is low, but watch this meter.</p>':'')+
+      '<div class="actions"><button class="btn sm" data-adm="cap" type="button">Set storage cap</button></div><p class="sub">The cap is your Supabase plan size (free is 1 GB). Change it here when you upgrade.</p>';
+    const by=s.by_day||[],mx=Math.max(1,...by.map(d=>d.n)),tot=by.reduce((t,d)=>t+d.n,0);
+    $('#admChart').innerHTML=`<div style="display:flex;align-items:flex-end;gap:3px;height:84px" role="img" aria-label="Sign-ups per day for the last 30 days, ${tot} in total">${by.map(d=>`<div title="${esc(d.d)}: ${d.n}" style="flex:1;height:${Math.max(3,d.n/mx*100)}%;background:var(--ink);opacity:${d.n?1:.2}"></div>`).join('')}</div><p class="sub">${tot} new in 30 days. Tallest bar: ${mx} in one day.</p>`;
+    $('#swApprove').setAttribute('aria-checked',String(!!s.approval_required));
+  }
   renderAdminTable();
+  $('#admLog').innerHTML='<h2>Recent admin activity</h2>'+(adm.log.length?`<div class="tbl"><table><thead><tr><th>When</th><th>Action</th><th>Studio or item</th><th>Detail</th><th>By</th></tr></thead><tbody>${adm.log.map(l=>`<tr><td>${esc(new Date(l.at).toLocaleString('en-GB'))}</td><td>${esc(l.action)}</td><td>${esc(l.target||'')}</td><td>${esc(l.detail||'')}</td><td>${esc(l.admin||'')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub">No admin actions yet.</p>');
 }
 function admRow(r){
-  const me=sess&&r.id===sess.user.id;
-  const btns=me?'<span class="sub">You (master)</span>':
-    `<button class="btn sm" data-adm="toggle" data-id="${r.id}">${r.disabled?'Reactivate':'Deactivate'}</button><button class="btn sm danger" data-adm="del" data-id="${r.id}">Delete</button>`;
-  return `<tr><td><b>${esc(r.name||'(no name yet)')}</b><br><span class="sub">${esc(r.email||'')}</span></td>`+
-  `<td><span class="pill ${r.disabled?'failed':'live'}">${r.disabled?'Deactivated':'Active'}</span></td>`+
-  `<td class="mono">${r.shoots}</td><td class="mono">${r.photos}</td>`+
-  `<td class="mono">${fmtBytes(r.bytes)} / ${r.limit_mb} MB</td><td class="mono">${r.views}</td>`+
-  `<td>${r.last_sign_in?fmtDate(Date.parse(r.last_sign_in)):'Never'}</td>`+
-  `<td><div class="actions"><button class="btn sm" data-adm="shoots" data-id="${r.id}">Shoots</button><button class="btn sm" data-adm="limit" data-id="${r.id}">Limit</button>${btns}</div></td></tr>`;
+  const me=sess&&r.id===sess.user.id,[pc,pt]=admStatus(r),p=admPct(r);
+  let b='<button class="btn sm" data-adm="shoots" data-id="'+r.id+'" type="button">Shoots</button><button class="btn sm" data-adm="limit" data-id="'+r.id+'" type="button">Limit</button>';
+  if(me)b+='<span class="sub">You (master)</span>';
+  else{
+    if(r.pending)b+='<button class="btn sm primary" data-adm="approve" data-id="'+r.id+'" type="button">Approve</button>';
+    else b+='<button class="btn sm" data-adm="toggle" data-id="'+r.id+'" type="button">'+(r.disabled?'Reactivate':'Deactivate')+'</button>';
+    b+='<button class="btn sm danger" data-adm="del" data-id="'+r.id+'" type="button">Delete</button>';
+  }
+  return `<tr><td><b>${esc(r.name||'(no name yet)')}</b><br><span class="sub">${esc(r.email||'')}</span></td><td><span class="pill ${pc}">${pt}</span></td><td>${fmtDate(tms(r.created_at))}</td><td class="mono">${r.shoots}</td><td class="mono">${r.photos}</td>`+
+  `<td style="min-width:150px"><div class="meter" aria-hidden="true"><i style="width:${Math.max(p>0?2:0,p)}%;background:${meterColor(p)}"></i></div><span class="mono sub">${fmtBytes(r.storage_bytes)} of ${r.limit_mb} MB</span></td>`+
+  `<td class="mono">${r.views}</td><td>${r.last_sign_in?fmtDate(tms(r.last_sign_in)):'Never'}</td><td><div class="actions">${b}</div></td></tr>`;
+}
+function admVisible(){
+  const q=adm.q.trim().toLowerCase();
+  return adm.rows.filter(r=>ADM_FILTER[adm.filter](r)&&(!q||((r.name||'')+' '+(r.email||'')).toLowerCase().includes(q))).sort(ADM_SORT[adm.sort]);
 }
 function renderAdminTable(){
-  const q=adm.q.trim().toLowerCase();
-  const rows=adm.rows.filter(r=>!q||((r.name||'')+' '+(r.email||'')).toLowerCase().includes(q));
-  const ph=adm.rows.reduce((t,r)=>t+r.photos,0),by=adm.rows.reduce((t,r)=>t+r.bytes,0);
-  $('#admStats').innerHTML=[['Studios',adm.rows.length],['Active',adm.rows.filter(r=>!r.disabled).length],['Photos',ph],['Storage used',fmtBytes(by)]].map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
-  $('#admBody').innerHTML=rows.length?rows.map(admRow).join(''):'<tr><td colspan="8">No studios found.</td></tr>';
+  const rows=admVisible();
+  $('#admBody').innerHTML=rows.length?rows.map(admRow).join(''):'<tr><td colspan="9">No studios match.</td></tr>';
+}
+function admCsv(){
+  const cell=v=>{v=String(v==null?'':v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
+  const head=['Studio','Email','Status','Registered','Last login','Shoots','Photos','Storage MB','Limit MB','Link opens'];
+  const lines=[head.map(cell).join(',')].concat(admVisible().map(r=>[r.name,r.email,admStatus(r)[1],r.created_at,r.last_sign_in||'',r.shoots,r.photos,(r.storage_bytes/1048576).toFixed(1),r.limit_mb,r.views].map(cell).join(',')));
+  saveBlob(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv'}),'onelogospot-studios.csv');toast('CSV saved');
 }
 async function admShoots(id){
   adm.open=id;const panel=$('#admShoots');panel.hidden=false;panel.innerHTML='<p class="sub">Loading shoots...</p>';
   let list=[];try{list=await rpc('admin_list_shoots',{p_studio:id});}catch(e){panel.innerHTML='<p class="notice">Could not load shoots.</p>';return;}
   const st=adm.rows.find(r=>r.id===id);
-  const stat=h=>!h.published?['draft','Draft']:(h.expires_at&&Date.parse(h.expires_at)<Date.now())?['expired','Expired']:['live','Live'];
+  const stat=h=>!h.published?['draft','Draft']:(h.expires_at&&tms(h.expires_at)<Date.now())?['expired','Expired']:['live','Live'];
   panel.innerHTML=`<h2>Shoots: ${esc(st?(st.name||st.email):'')}</h2>`+(list.length?
   `<div class="tbl"><table><thead><tr><th>Shoot</th><th>Status</th><th>Photos</th><th>Opens</th><th>Created</th><th>Actions</th></tr></thead><tbody>`+
   list.map(h=>{const [c,t]=stat(h),link=base()+'#c-'+h.code;
-    return `<tr><td>${esc(h.title)}</td><td><span class="pill ${c}">${t}</span></td><td class="mono">${h.photos}</td><td class="mono">${h.views}</td><td>${fmtDate(Date.parse(h.created_at))}</td>`+
-    `<td><div class="actions"><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Open</a><button class="btn sm" data-adm="spub" data-id="${h.id}" data-pub="${h.published?'0':'1'}">${h.published?'Unpublish':'Publish'}</button><button class="btn sm danger" data-adm="sdel" data-id="${h.id}">Delete</button></div></td></tr>`;}).join('')+
+    return `<tr><td>${esc(h.title)}</td><td><span class="pill ${c}">${t}</span></td><td class="mono">${h.photos}</td><td class="mono">${h.views}</td><td>${fmtDate(tms(h.created_at))}</td>`+
+    `<td><div class="actions"><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Open</a><button class="btn sm" data-adm="spub" data-id="${h.id}" data-pub="${h.published?'0':'1'}" type="button">${h.published?'Unpublish':'Publish'}</button><button class="btn sm danger" data-adm="sdel" data-id="${h.id}" type="button">Delete</button></div></td></tr>`;}).join('')+
   `</tbody></table></div>`:'<p class="sub">This studio has no shoots yet.</p>');
   panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 $('#admQ').addEventListener('input',e=>{adm.q=e.target.value;renderAdminTable();});
+$('#admFilter').addEventListener('change',e=>{adm.filter=e.target.value;renderAdminTable();});
+$('#admSort').addEventListener('change',e=>{adm.sort=e.target.value;renderAdminTable();});
+$('#admExport').addEventListener('click',admCsv);
 $('#admRefresh').addEventListener('click',()=>{admLoad();if(adm.open)admShoots(adm.open);});
 $('#p-admin').addEventListener('click',async e=>{
-  const a=e.target.closest('[data-adm]');if(!a)return;
+  const a=e.target.closest('[data-adm]');if(!a||a.id==='admExport')return;
   const act=a.dataset.adm,id=a.dataset.id,st=adm.rows.find(r=>r.id===id),label=st?(st.name||st.email):'this studio';
   try{
     if(act==='shoots')await admShoots(id);
+    else if(act==='approve'&&st){await rpc('admin_approve',{p_studio:id});toast(label+' approved');await admLoad();}
     else if(act==='toggle'&&st){
       if(!st.disabled&&!confirm('Deactivate '+label+'? They cannot log in and all their client links stop working until you reactivate.'))return;
       await rpc('admin_set_disabled',{p_studio:id,p_disabled:!st.disabled});
@@ -1704,6 +1775,15 @@ $('#p-admin').addEventListener('click',async e=>{
       const n=Math.round(+v);if(!(n>=1&&n<=1000000)){toast('Enter a number of MB, for example 2000.');return;}
       await rpc('admin_set_limit',{p_studio:id,p_mb:n});toast('Limit saved');await admLoad();
     }
+    else if(act==='cap'){
+      const v=prompt('Total storage your Supabase plan holds, in MB (free plan is 1024, Pro is 102400)',String(adm.stats?adm.stats.cap_mb:1024));if(v===null)return;
+      const n=Math.round(+v);if(!(n>=1)){toast('Enter a number of MB.');return;}
+      await rpc('admin_set_setting',{p_key:'storage_cap_mb',p_value:n});toast('Storage cap saved');await admLoad();
+    }
+    else if(act==='approval'){
+      const on=!(adm.stats&&adm.stats.approval_required);
+      await rpc('admin_set_setting',{p_key:'approval_required',p_value:on});toast(on?'New studios now wait for your approval':'New studios can use the app straight away');await admLoad();
+    }
     else if(act==='del'&&st){
       if(!confirm('Permanently delete '+label+', their account, every shoot and every photo? This cannot be undone.'))return;
       const paths=await rpc('admin_paths',{p_studio:id,p_shoot:null});
@@ -1713,7 +1793,7 @@ $('#p-admin').addEventListener('click',async e=>{
       toast('Studio deleted');await admLoad();
     }
     else if(act==='spub'){
-      await rpc('admin_set_shoot_published',{p_shoot:id,p_pub:a.dataset.pub==='1'});toast('Shoot updated');await admShoots(adm.open);
+      await rpc('admin_set_shoot_published',{p_shoot:id,p_pub:a.dataset.pub==='1'});toast('Shoot updated');await admShoots(adm.open);await admLoad();
     }
     else if(act==='sdel'){
       if(!confirm('Permanently delete this shoot and all its photos?'))return;
