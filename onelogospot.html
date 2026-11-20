@@ -258,6 +258,9 @@ td:first-child{font-weight:600;white-space:nowrap}
 
 
 #admTbl td:first-child{white-space:normal}#admTbl td .actions{gap:6px;flex-wrap:nowrap}
+.statbtn{text-align:left;cursor:pointer}.statbtn:hover,.statbtn[aria-pressed=true]{border-color:var(--ink)}.statbtn[aria-pressed=true]{background:var(--surface-2)}
+#admTbl tbody tr[data-row]{cursor:pointer}#admTbl tbody tr[data-row]:hover{background:var(--surface-2)}
+.ladder{display:flex;flex-wrap:wrap;gap:8px}.chip[disabled]{opacity:.4;cursor:not-allowed}
 /* live version additions */
 .pill.expired{color:var(--bad)}
 .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
@@ -336,6 +339,7 @@ td:first-child{font-weight:600;white-space:nowrap}
               <label for="sessionName">Client or shoot name</label>
               <input id="sessionName" type="text" maxlength="60" placeholder="Mensah wedding, 3 Oct" autocomplete="off">
             </div>
+            <div class="field" id="targetWrap" hidden><label for="targetShoot">Add to</label><select id="targetShoot"><option value="">A new shoot (new link)</option></select><p class="sub">Pick an existing shoot to add more photos to the same client link. Useful for big shoots with thousands of photos.</p></div>
             <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose photos to upload">
               <div class="ico" id="dropIco"></div>
               <b>Drop photos here</b>
@@ -442,6 +446,7 @@ td:first-child{font-weight:600;white-space:nowrap}
         <p class="lede">Who has registered, how much storage each studio uses, and controls to approve, deactivate or delete accounts. Only the master login can open this page.</p>
       </header>
       <div class="stats" id="admStats"></div>
+      <p class="sub">Tap any number to filter the list below. Tap a studio to open it, see its shoots and move its storage allowance up or down.</p>
       <div class="cols2">
         <div class="panel" id="admStorage"></div>
         <div class="panel">
@@ -457,13 +462,13 @@ td:first-child{font-weight:600;white-space:nowrap}
         <h2>Studios</h2>
         <div class="actions">
           <div class="field" style="flex:1 1 220px"><label for="admQ">Search</label><input id="admQ" type="text" placeholder="Studio name or email" autocomplete="off"></div>
-          <div class="field"><label for="admFilter">Show</label><select id="admFilter"><option value="all">All studios</option><option value="active">Active</option><option value="pending">Waiting for approval</option><option value="disabled">Deactivated</option><option value="near">Storage over 80%</option><option value="never">Never logged in</option></select></div>
-          <div class="field"><label for="admSort">Sort by</label><select id="admSort"><option value="new">Newest first</option><option value="storage">Most storage</option><option value="photos">Most photos</option><option value="login">Last login</option><option value="name">Name</option></select></div>
+          <div class="field"><label for="admFilter">Show</label><select id="admFilter"><option value="all">All studios</option><option value="active">Active</option><option value="pending">Waiting for approval</option><option value="disabled">Deactivated</option><option value="near">Storage over 80%</option><option value="new7">Registered, last 7 days</option><option value="new30">Registered, last 30 days</option><option value="active30">Logged in, last 30 days</option><option value="never">Never logged in</option></select></div>
+          <div class="field"><label for="admSort">Sort by</label><select id="admSort"><option value="new">Newest first</option><option value="storage">Most storage</option><option value="photos">Most photos</option><option value="login">Last login</option><option value="shoots">Most shoots</option><option value="views">Most link opens</option><option value="limit">Biggest allowance</option><option value="name">Name</option></select></div>
           <button class="btn" id="admExport" type="button">Export CSV</button><button class="btn" id="admRefresh" type="button">Refresh</button>
         </div>
         <div class="tbl"><table id="admTbl"><thead><tr><th>Studio</th><th>Status</th><th>Registered</th><th>Shoots</th><th>Photos</th><th>Storage used</th><th>Opens</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="admBody"></tbody></table></div>
       </div>
-      <div class="panel" id="admShoots" hidden></div>
+      <div class="panel" id="admDetail" hidden></div>
       <div class="panel" id="admLog"></div>
     </section>
 
@@ -632,7 +637,7 @@ const CLOUD={url:'https://utxhqjnqkixjojoqhcqz.supabase.co',key:'sb_publishable_
 CLOUD.url=CLOUD.url.trim().replace(/\/+$/,'');CLOUD.key=CLOUD.key.trim();
 const CLOUDON=!!(CLOUD.url&&CLOUD.key);
 if(CLOUDON)$('#shell').hidden=true;
-const MAX_BATCH=CLOUDON?100:20, MAX_FILE_MB=30;
+const MAX_BATCH=CLOUDON?300:20, MAX_FILE_MB=30;
 const DEFAULTS={pos:'br',color:'auto',size:26,opacity:90,margin:3,maxPx:2400,whatsapp:'',autoApply:true,autoPublish:true};
 let settings={...DEFAULTS};
 try{const s=JSON.parse(localStorage.getItem('ss-settings')||'null');if(s)settings={...DEFAULTS,...s};}catch(e){}
@@ -971,9 +976,12 @@ async function run(){
   if(batch.phase==='processing')return;
   const queued=batch.items.filter(i=>i.status==='queued');if(!queued.length)return;
   batch.phase='processing';renderBatch();
+  const targetId=($('#targetShoot')&&$('#targetShoot').value)||'';
+  const existing=targetId?state.sessions.find(x=>x.id===targetId):null;
+  if(existing)existing._p=Promise.resolve();
   const title=($('#sessionName').value||'').trim()||defaultTitle();
-  const session={id:CLOUDON?newId():uid(),code:newCode(),title,createdAt:Date.now(),published:settings.autoPublish,example:false,expiresAt:null,hasPassword:false,views:0,lastViewed:null};
-  let idx=0,ok=0,quota=false,prev=null;
+  const session=existing||{id:CLOUDON?newId():uid(),code:newCode(),title,createdAt:Date.now(),published:settings.autoPublish,example:false,expiresAt:null,hasPassword:false,views:0,lastViewed:null};
+  let idx=existing?sessPhotos(existing.id).reduce((m,p)=>Math.max(m,p.n),0):0,ok=0,quota=false,prev=null;
   const commit=async(it,job)=>{
     try{const photo=await job;if(!state.sessions.includes(session))state.sessions.push(session);state.photos.push(photo);ok++;it.status='done';it.photoId=photo.id;}
     catch(e){it.status='failed';if(/storage limit/i.test(e.message||''))quota=true;}
@@ -995,13 +1003,15 @@ async function run(){
     renderBatch();
   }
   if(prev)await prev;
-  if(CLOUDON&&!ok&&session._p){session._p.then(()=>http('/rest/v1/shoots?id=eq.'+session.id,{method:'DELETE'})).catch(()=>{});}
+  if(CLOUDON&&!ok&&session._p&&!existing){session._p.then(()=>http('/rest/v1/shoots?id=eq.'+session.id,{method:'DELETE'})).catch(()=>{});}
   if(quota){const nt=$('#notice');nt.hidden=false;nt.textContent='Your storage allowance is full, so some photos were not saved. Delete old shoots or ask BYINFORGH for more space.';}
   batch.phase='done';
   if(ok){state.active=session.id;batch.sessionId=session.id;toast(ok+' photo'+(ok>1?'s':'')+' ready');}
   renderBatch();renderDock();renderNavCount();
 }
-function renderBatch(){
+let rbq=0;
+function renderBatch(){if(rbq)return;rbq=requestAnimationFrame(()=>{rbq=0;renderBatchNow();});}
+function renderBatchNow(){
   const n=batch.items.length;
   $('#ticks').innerHTML=Array.from({length:20},(_,i)=>`<i class="${i<Math.ceil(n/MAX_BATCH*20)?'on':''}"></i>`).join('');
   const compact=n>24;
@@ -1013,7 +1023,8 @@ function renderBatch(){
     const d=batch.items.filter(i=>i.status==='done'||i.status==='failed').length;
     a.innerHTML=`<span class="sub">Adding your logo, ${d} of ${n} done.</span>`;
   }else if(batch.phase==='done'){
-    a.innerHTML=`<button class="btn" data-act="again">Upload another batch</button>`;
+    const failedN=batch.items.filter(i=>i.status==='failed').length;
+    a.innerHTML=(failedN?`<button class="btn primary" data-act="retry">Retry ${failedN} that failed</button>`:'')+(batch.sessionId?`<button class="btn" data-act="more-same">Add more to this shoot</button>`:'')+`<button class="btn" data-act="again">${batch.sessionId?'Start a new shoot':'Upload another batch'}</button>`;
   }else if(n&&!settings.autoApply){
     a.innerHTML=`<button class="btn primary" data-act="run">Add logo to ${n} photo${n>1?'s':''} and create link</button><button class="btn" data-act="clear">Clear</button>`;
   }else a.innerHTML='';
@@ -1041,7 +1052,9 @@ document.addEventListener('click',e=>{
     (async()=>{for(const s of [...state.sessions])await removeSession(s);resetBatch();renderDock();renderNavCount();renderSetup();toast('All photos cleared');})();
   }
   else if(act==='rm-item')removeItem(a.dataset.id);
-  else if(act==='again'){resetBatch();$('#sessionName').value='';}
+  else if(act==='again'){resetBatch();$('#sessionName').value='';$('#targetShoot').value='';syncTarget();}
+  else if(act==='more-same'){const id=batch.sessionId;resetBatch();renderTargets();if(id)$('#targetShoot').value=id;syncTarget();}
+  else if(act==='retry'){batch.items.forEach(i=>{if(i.status==='failed')i.status='queued';});batch.phase='ready';if(batch.sessionId){renderTargets();$('#targetShoot').value=batch.sessionId;syncTarget();}run();}
   else if(act==='qr-done'){const s=state.sessions.find(x=>x.id===batch.sessionId);if(s)showQr(linkFor(s),s.title);}
   else if(act==='export-done'){const s=state.sessions.find(x=>x.id===batch.sessionId);if(s)exportShoot(s,a);}
   else if(act==='copy-done'){const i=$('#doneInput');copyText(i.value,i);}
@@ -1078,7 +1091,7 @@ window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('drop',e=>e.preventDefault());
 
 /* ---------- gallery ---------- */
-function renderNavCount(){$('#navCount').textContent=state.photos.length?String(state.photos.length):'';renderUsage();}
+function renderNavCount(){$('#navCount').textContent=state.photos.length?String(state.photos.length):'';renderUsage();renderTargets();}
 function renderGallery(){
   const sessions=[...state.sessions].sort((a,b)=>b.createdAt-a.createdAt);
   if(state.filter!=='all'&&!sessions.some(s=>s.id===state.filter))state.filter='all';
@@ -1094,7 +1107,7 @@ function renderGallery(){
     `<div class="sess-actions"><button class="btn sm" data-act="toggle-pub" data-id="${s.id}">${s.published?'Unpublish':'Publish'}</button><button class="btn sm" data-act="preview" data-id="${s.id}"${s.published?'':' disabled'}>Preview as client</button><button class="btn sm" data-act="export" data-id="${s.id}">Download gallery file</button><button class="btn sm danger" data-act="del-session" data-id="${s.id}">Delete shoot</button></div></div>`+
     `<div class="linkrow"><input readonly value="${esc(link)}" aria-label="Client link for ${esc(s.title)}"><button class="btn sm primary" data-act="copy-link" data-id="${s.id}">Copy link</button>${CLOUDON?`<a class="btn sm" href="${waLink(s)}" target="_blank" rel="noopener">WhatsApp</a><button class="btn sm" data-act="qr" data-id="${s.id}">QR code</button>`:''}</div>`+
     (CLOUDON?ctrlsHtml(s):`<p class="sub">Test version: this link opens on this device only. To send a client these photos now, use Download gallery file.</p>`)+
-    `<div class="sheet">${ph.map((p,i)=>`<button class="ph-card" data-act="open-photo" data-id="${s.id}" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><div class="im"><img src="${urlFor(p,'t')}" alt="${esc(p.name)}" loading="lazy" decoding="async"></div><div class="cap"><span>${frameLabel(p.n)}</span><span>${p.w}×${p.h}</span></div></button>`).join('')}</div>`+
+    `<div class="sheet">${ph.slice(0,shownFor(s.id)).map((p,i)=>`<button class="ph-card" data-act="open-photo" data-id="${s.id}" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><div class="im"><img src="${urlFor(p,'t')}" alt="${esc(p.name)}" loading="lazy" decoding="async"></div><div class="cap"><span>${frameLabel(p.n)}</span><span>${p.w}×${p.h}</span></div></button>`).join('')}</div>${ph.length>shownFor(s.id)?`<div class="actions"><button class="btn" data-act="more-photos" data-id="${s.id}">Show more photos (${ph.length-shownFor(s.id)} left)</button></div>`:''}`+
     `</article>`;
   }).join('');
 }
@@ -1111,6 +1124,7 @@ $('#gal').addEventListener('click',async e=>{
   else if(act==='toggle-pub'&&s){s.published=!s.published;if(!(await persistSession(s))){s.published=!s.published;renderGallery();renderDock();return;}renderGallery();renderDock();toast(s.published?'Shoot is live. The link is open.':'Shoot is a draft. The link is closed.');}
   else if(act==='preview'&&s){openClient(s.code,true);}
   else if(act==='export'&&s){exportShoot(s,a);}
+  else if(act==='more-photos'&&s){shownMap[s.id]=shownFor(s.id)+240;renderGallery();}
   else if(act==='open-photo'&&s){openLightbox(sessPhotos(s.id),+a.dataset.i,'studio');}
   else if(act==='del-session'&&s){
     if(a.dataset.armed!=='true'){a.dataset.armed='true';a.textContent='Click again to delete';clearTimeout(a._t);a._t=setTimeout(()=>{a.dataset.armed='false';a.textContent='Delete shoot';},3200);return;}
@@ -1536,11 +1550,16 @@ function syncFavs(){
   const fb=$('#lbFav');if(fb&&!$('#lb').hidden&&lb.ctx==='client'){const p=lb.list[lb.i];if(p){fb.setAttribute('aria-pressed',String(cc.fav.has(p.n)));fb.textContent=cc.fav.has(p.n)?'Picked':'Pick';}}
 }
 function sendPicks(){
-  const list=[...cc.fav].sort((a,b)=>a-b).map(frameLabel).join(', ');
+  const list=picksText();
   const nm=cc.studio&&cc.studio.name?' '+cc.studio.name:'';
   const msg='Hi'+nm+', these are my picks from "'+cc.title+'": '+list+'. '+location.href.split('#')[0]+'#c-'+cc.code;
   const num=((cc.studio&&cc.studio.whatsapp)||'').replace(/\D/g,'');
-  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank','noopener');
+  let out=msg;
+  if(encodeURIComponent(msg).length>1800){
+    out='Hi'+nm+', I picked '+cc.fav.size+' photos from "'+cc.title+'". My full list is in my next message. '+location.href.split('#')[0]+'#c-'+cc.code;
+    try{navigator.clipboard.writeText(msg).then(()=>toast('Your full list is copied. Paste it into the WhatsApp chat.'),()=>{});}catch(e){}
+  }
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(out),'_blank','noopener');
 }
 function cloudBrandHtml(st){
   if(!st)return '';
@@ -1569,8 +1588,8 @@ async function openCloudClient(code,preview,banner,pw,wrong){
   Object.assign(cc,{code,title:g.title,studio:g.studio,photos,fav:loadFavs(code)});
   const studioName=(g.studio&&g.studio.name)||'the studio';
   root.innerHTML=banner+`<div class="cl-top">${bh}<span class="eyebrow">Private gallery</span></div>`+
-  `<div class="cl-hero"><p class="eyebrow">Your photos</p><h1>${esc(g.title)}</h1><p class="mono">${photos.length} photos · ${fmtDate(Date.parse(g.created_at))}</p><div class="cl-actions"><button class="btn" id="zipBtn">Download all (ZIP)</button></div><p class="sub">Tap the heart on your favourites, then send your picks to ${esc(studioName)} on WhatsApp.</p></div>`+
-  `<div class="masonry">${photos.map((p,i)=>`<div class="mi"><button class="open" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><img src="${esc(p.tUrl)}" width="${Math.round(p.w*480/Math.max(p.w,p.h))}" height="${Math.round(p.h*480/Math.max(p.w,p.h))}" alt="Photo ${i+1}" loading="lazy" decoding="async"></button><button class="heart" data-n="${p.n}" aria-pressed="${cc.fav.has(p.n)}" aria-label="Pick ${frameLabel(p.n)}">&#9829;</button></div>`).join('')}</div>`+
+  `<div class="cl-hero"><p class="eyebrow">Your photos</p><h1>${esc(g.title)}</h1><p class="mono">${photos.length} photos · ${fmtDate(Date.parse(g.created_at))}</p><div class="cl-actions"><button class="btn" id="zipBtn" type="button">Download all (ZIP)</button></div><div class="cl-actions" id="zipParts" hidden></div><p class="sub">Tap the heart on your favourites, then send your picks to ${esc(studioName)} on WhatsApp.</p></div>`+
+  `<div class="masonry">${photos.slice(0,PAGE).map((p,i)=>`<div class="mi"><button class="open" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><img src="${esc(p.tUrl)}" width="${Math.round(p.w*480/Math.max(p.w,p.h))}" height="${Math.round(p.h*480/Math.max(p.w,p.h))}" alt="Photo ${i+1}" loading="lazy" decoding="async"></button><button class="heart" data-n="${p.n}" aria-pressed="${cc.fav.has(p.n)}" aria-label="Pick ${frameLabel(p.n)}">&#9829;</button></div>`).join('')}</div>`+
   `<div class="pickbar" id="pickbar" hidden><span id="pickTxt"></span><span class="grp"><button class="btn sm ghost" id="pickClear">Clear</button><button class="btn sm primary" id="pickSend">Send picks on WhatsApp</button></span></div>`+
   `<div class="cl-foot">These photos carry the ${esc(studioName)} logo. Contact the studio for full-resolution files. Private gallery: shared only with people who hold this link. ${CL_FOOT}</div>`;
   bind();syncFavs();
@@ -1578,7 +1597,14 @@ async function openCloudClient(code,preview,banner,pw,wrong){
     const h=e.target.closest('.heart');if(h){toggleFav(+h.dataset.n);return;}
     const b=e.target.closest('.open[data-i]');if(b)openLightbox(photos,+b.dataset.i,'client');
   });
-  $('#zipBtn').addEventListener('click',e=>zipPhotos(photos,g.title,e.currentTarget));
+  clientPaging(root,photos);
+  if(photos.length>ZIP_PART)$('#zipBtn').textContent='Download all photos (in parts)';
+  $('#zipBtn').addEventListener('click',e=>{
+    if(photos.length<=ZIP_PART){zipPhotos(photos,g.title,e.currentTarget);return;}
+    const box=$('#zipParts');
+    if(!box.childElementCount){for(let k=0;k*ZIP_PART<photos.length;k++){const lo=k*ZIP_PART,hi=Math.min(photos.length,lo+ZIP_PART),b=document.createElement('button');b.className='btn sm';b.type='button';b.textContent='Photos '+(lo+1)+' to '+hi;b.addEventListener('click',()=>zipPhotos(photos.slice(lo,hi),g.title+' part '+(k+1),b));box.appendChild(b);}}
+    box.hidden=!box.hidden;
+  });
   $('#pickSend').addEventListener('click',sendPicks);
   $('#pickClear').addEventListener('click',()=>{cc.fav.clear();saveFavs();syncFavs();});
 }
@@ -1679,16 +1705,57 @@ function renderUsage(){
   el.textContent='Storage: '+fmtBytes(used)+' of '+fmtBytes(lim)+' used.'+(pct>=80?' Almost full. Delete old shoots or ask BYINFORGH for more space.':'');
 }
 
+/* ---------- big galleries: paging, parts, long pick lists ---------- */
+const PAGE=60,ZIP_PART=100,shownMap={};
+const shownFor=id=>shownMap[id]||120;
+function cloudItemHtml(p,i){
+  return `<div class="mi"><button class="open" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><img src="${esc(p.tUrl)}" width="${Math.round(p.w*480/Math.max(p.w,p.h))}" height="${Math.round(p.h*480/Math.max(p.w,p.h))}" alt="Photo ${i+1}" loading="lazy" decoding="async"></button><button class="heart" data-n="${p.n}" aria-pressed="${cc.fav.has(p.n)}" aria-label="Pick ${frameLabel(p.n)}">&#9829;</button></div>`;
+}
+function clientPaging(root,photos){
+  if(photos.length<=PAGE)return;
+  let shown=PAGE;const mas=root.querySelector('.masonry');
+  const more=document.createElement('div');more.style.cssText='display:flex;justify-content:center;padding:0 var(--gutter) 40px';
+  more.innerHTML='<button class="btn" type="button">Show more photos</button>';
+  const loadMore=()=>{
+    if(shown>=photos.length)return;
+    const next=Math.min(photos.length,shown+PAGE);
+    mas.insertAdjacentHTML('beforeend',photos.slice(shown,next).map((p,i)=>cloudItemHtml(p,shown+i)).join(''));
+    shown=next;syncFavs();if(shown>=photos.length)more.remove();
+  };
+  mas.after(more);more.querySelector('button').addEventListener('click',loadMore);
+  if('IntersectionObserver' in window){const io=new IntersectionObserver(es=>{if(es.some(x=>x.isIntersecting))loadMore();},{rootMargin:'900px'});io.observe(more);}
+}
+function picksText(){
+  const a=[...cc.fav].sort((x,y)=>x-y),out=[];
+  for(let i=0;i<a.length;){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;out.push(j-i>=2?frameLabel(a[i])+' to '+frameLabel(a[j]):a.slice(i,j+1).map(frameLabel).join(', '));i=j+1;}
+  return out.join(', ');
+}
+function syncTarget(){const sel=$('#targetShoot'),nm=$('#sessionName');if(sel&&nm)nm.disabled=!!sel.value;}
+function renderTargets(){
+  const sel=$('#targetShoot'),w=$('#targetWrap');if(!sel||!w)return;
+  const keep=sel.value,list=[...state.sessions].sort((a,b)=>b.createdAt-a.createdAt);
+  w.hidden=!list.length;
+  sel.innerHTML='<option value="">A new shoot (new link)</option>'+list.map(x=>`<option value="${esc(x.id)}">${esc(x.title)} (${sessPhotos(x.id).length} photos)</option>`).join('');
+  sel.value=list.some(x=>x.id===keep)?keep:'';syncTarget();
+}
+$('#targetShoot').addEventListener('change',syncTarget);
+
 /* ---------- master admin ---------- */
 let isAdmin=false;
-const adm={rows:[],stats:null,log:[],open:null,q:'',filter:'all',sort:'new'};
+const TIERS_MB=[1024,2048,5120,10240,25600,51200,102400,256000];
+const fmtMB=mb=>mb>=1024?(+(mb/1024).toFixed(1))+' GB':mb+' MB';
+const adm={rows:[],stats:null,log:[],open:null,shoots:[],shootsFor:null,q:'',filter:'all',sort:'new'};
 const rpc=(name,json)=>http('/rest/v1/rpc/'+name,{method:'POST',json:json||{}});
 const admStatus=r=>r.pending?['draft','Waiting']:r.disabled?['failed','Deactivated']:['live','Active'];
 const admPct=r=>r.limit_mb?Math.min(100,r.storage_bytes/(r.limit_mb*1048576)*100):0;
 const meterColor=p=>p>=95?'var(--bad)':p>=80?'var(--warn)':'var(--ink)';
 const tms=t=>t?Date.parse(t):0;
-const ADM_FILTER={all:()=>true,active:r=>!r.disabled,pending:r=>r.pending,disabled:r=>r.disabled&&!r.pending,near:r=>admPct(r)>=80,never:r=>!r.last_sign_in};
-const ADM_SORT={new:(a,b)=>tms(b.created_at)-tms(a.created_at),storage:(a,b)=>b.storage_bytes-a.storage_bytes,photos:(a,b)=>b.photos-a.photos,login:(a,b)=>tms(b.last_sign_in)-tms(a.last_sign_in),name:(a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email))};
+const DAY=864e5;
+const ADM_FILTER={all:()=>true,active:r=>!r.disabled,pending:r=>r.pending,disabled:r=>r.disabled&&!r.pending,near:r=>admPct(r)>=80,never:r=>!r.last_sign_in,
+  new7:r=>Date.now()-tms(r.created_at)<7*DAY,new30:r=>Date.now()-tms(r.created_at)<30*DAY,active30:r=>!!r.last_sign_in&&Date.now()-tms(r.last_sign_in)<30*DAY};
+const ADM_SORT={new:(a,b)=>tms(b.created_at)-tms(a.created_at),storage:(a,b)=>b.storage_bytes-a.storage_bytes,photos:(a,b)=>b.photos-a.photos,
+  login:(a,b)=>tms(b.last_sign_in)-tms(a.last_sign_in),shoots:(a,b)=>b.shoots-a.shoots,views:(a,b)=>b.views-a.views,limit:(a,b)=>b.limit_mb-a.limit_mb,
+  name:(a,b)=>String(a.name||a.email).localeCompare(String(b.name||b.email))};
 function renderAdmin(){if(!isAdmin){go('upload');return;}admLoad();}
 async function admLoad(){
   try{
@@ -1696,17 +1763,19 @@ async function admLoad(){
     adm.rows=rows||[];adm.stats=stats;adm.log=log||[];
   }catch(e){toast('Could not load admin data. '+(e.message||''));}
   renderAdminAll();
+  if(adm.open)await admDetail(adm.open,false);
 }
+const statBtn=(l,v,f,so)=>`<button type="button" class="stat statbtn" data-adm="card" data-f="${f}" data-s="${so}" aria-pressed="${adm.filter===f&&adm.sort===so}"><b>${v}</b><span>${l}</span></button>`;
 function renderAdminAll(){
   const s=adm.stats;
   if(s){
-    $('#admStats').innerHTML=[['Registered studios',s.studios_total],['New, last 7 days',s.new_7d],['New, last 30 days',s.new_30d],['Logged in, last 30 days',s.active_30d],['Never logged in',s.never_logged_in],['Waiting for approval',s.pending],['Deactivated',s.deactivated],['Shoots',s.shoots],['Photos',s.photos],['Client link opens',s.views]].map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    $('#admStats').innerHTML=[['Registered studios',s.studios_total,'all','new'],['New, last 7 days',s.new_7d,'new7','new'],['New, last 30 days',s.new_30d,'new30','new'],['Logged in, last 30 days',s.active_30d,'active30','login'],['Never logged in',s.never_logged_in,'never','new'],['Waiting for approval',s.pending,'pending','new'],['Deactivated',s.deactivated,'disabled','new'],['Shoots',s.shoots,'all','shoots'],['Photos',s.photos,'all','photos'],['Client link opens',s.views,'all','views']].map(x=>statBtn(...x)).join('');
     const cap=(s.cap_mb||0)*1048576,pct=cap?s.storage_bytes/cap*100:0;
-    $('#admStorage').innerHTML=`<h2>Platform storage</h2><div class="stats"><div class="stat"><b>${fmtBytes(s.storage_bytes)}</b><span>Used, ${s.files} files</span></div><div class="stat"><b>${pct.toFixed(1)}%</b><span>Of your ${fmtBytes(cap)} cap</span></div><div class="stat"><b>${(s.allocated_mb/1024).toFixed(1)} GB</b><span>Promised to studios</span></div></div>`+
+    $('#admStorage').innerHTML=`<h2>Platform storage</h2><div class="stats">${statBtn('Used, '+s.files+' files',fmtBytes(s.storage_bytes),'all','storage')}${statBtn('Of your '+fmtBytes(cap)+' cap',pct.toFixed(1)+'%','near','storage')}${statBtn('Promised to studios',(s.allocated_mb/1024).toFixed(1)+' GB','all','limit')}</div>`+
       `<div class="meter" aria-hidden="true"><i style="width:${Math.min(100,pct)}%;background:${meterColor(pct)}"></i></div>`+
       (pct>=80?'<p class="notice">Platform storage is above 80% of your cap. Upgrade the Supabase plan or lower studio allowances before it fills.</p>':'')+
       (s.allocated_mb>s.cap_mb?'<p class="sub">You have promised studios more storage than your plan holds. That is fine while usage is low, but watch this meter.</p>':'')+
-      '<div class="actions"><button class="btn sm" data-adm="cap" type="button">Set storage cap</button></div><p class="sub">The cap is your Supabase plan size (free is 1 GB). Change it here when you upgrade.</p>';
+      '<div class="actions"><button class="btn sm" data-adm="cap" type="button">Set storage cap</button></div><p class="sub">The cap is your Supabase plan size (free is 1 GB, Pro is 100 GB). Change it here when you upgrade.</p>';
     const by=s.by_day||[],mx=Math.max(1,...by.map(d=>d.n)),tot=by.reduce((t,d)=>t+d.n,0);
     $('#admChart').innerHTML=`<div style="display:flex;align-items:flex-end;gap:3px;height:84px" role="img" aria-label="Sign-ups per day for the last 30 days, ${tot} in total">${by.map(d=>`<div title="${esc(d.d)}: ${d.n}" style="flex:1;height:${Math.max(3,d.n/mx*100)}%;background:var(--ink);opacity:${d.n?1:.2}"></div>`).join('')}</div><p class="sub">${tot} new in 30 days. Tallest bar: ${mx} in one day.</p>`;
     $('#swApprove').setAttribute('aria-checked',String(!!s.approval_required));
@@ -1714,24 +1783,25 @@ function renderAdminAll(){
   renderAdminTable();
   $('#admLog').innerHTML='<h2>Recent admin activity</h2>'+(adm.log.length?`<div class="tbl"><table><thead><tr><th>When</th><th>Action</th><th>Studio or item</th><th>Detail</th><th>By</th></tr></thead><tbody>${adm.log.map(l=>`<tr><td>${esc(new Date(l.at).toLocaleString('en-GB'))}</td><td>${esc(l.action)}</td><td>${esc(l.target||'')}</td><td>${esc(l.detail||'')}</td><td>${esc(l.admin||'')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sub">No admin actions yet.</p>');
 }
+function admActions(r,withOpen){
+  const me=sess&&r.id===sess.user.id;let b=withOpen?'<button class="btn sm" data-adm="open" data-id="'+r.id+'" type="button">Open</button>':'';
+  if(me)return b+'<span class="sub">You (master)</span>';
+  if(r.pending)b+='<button class="btn sm primary" data-adm="approve" data-id="'+r.id+'" type="button">Approve</button>';
+  else b+='<button class="btn sm" data-adm="toggle" data-id="'+r.id+'" type="button">'+(r.disabled?'Reactivate':'Deactivate')+'</button>';
+  return b+'<button class="btn sm danger" data-adm="del" data-id="'+r.id+'" type="button">Delete</button>';
+}
 function admRow(r){
-  const me=sess&&r.id===sess.user.id,[pc,pt]=admStatus(r),p=admPct(r);
-  let b='<button class="btn sm" data-adm="shoots" data-id="'+r.id+'" type="button">Shoots</button><button class="btn sm" data-adm="limit" data-id="'+r.id+'" type="button">Limit</button>';
-  if(me)b+='<span class="sub">You (master)</span>';
-  else{
-    if(r.pending)b+='<button class="btn sm primary" data-adm="approve" data-id="'+r.id+'" type="button">Approve</button>';
-    else b+='<button class="btn sm" data-adm="toggle" data-id="'+r.id+'" type="button">'+(r.disabled?'Reactivate':'Deactivate')+'</button>';
-    b+='<button class="btn sm danger" data-adm="del" data-id="'+r.id+'" type="button">Delete</button>';
-  }
-  return `<tr><td><b>${esc(r.name||'(no name yet)')}</b><br><span class="sub">${esc(r.email||'')}</span></td><td><span class="pill ${pc}">${pt}</span></td><td>${fmtDate(tms(r.created_at))}</td><td class="mono">${r.shoots}</td><td class="mono">${r.photos}</td>`+
-  `<td style="min-width:150px"><div class="meter" aria-hidden="true"><i style="width:${Math.max(p>0?2:0,p)}%;background:${meterColor(p)}"></i></div><span class="mono sub">${fmtBytes(r.storage_bytes)} of ${r.limit_mb} MB</span></td>`+
-  `<td class="mono">${r.views}</td><td>${r.last_sign_in?fmtDate(tms(r.last_sign_in)):'Never'}</td><td><div class="actions">${b}</div></td></tr>`;
+  const [pc,pt]=admStatus(r),p=admPct(r);
+  return `<tr data-row="${r.id}"><td><button class="linkbtn" data-adm="open" data-id="${r.id}" type="button"><b>${esc(r.name||'(no name yet)')}</b></button><br><span class="sub">${esc(r.email||'')}</span></td><td><span class="pill ${pc}">${pt}</span></td><td>${fmtDate(tms(r.created_at))}</td><td class="mono">${r.shoots}</td><td class="mono">${r.photos}</td>`+
+  `<td style="min-width:150px"><div class="meter" aria-hidden="true"><i style="width:${Math.max(p>0?2:0,p)}%;background:${meterColor(p)}"></i></div><span class="mono sub">${fmtBytes(r.storage_bytes)} of ${fmtMB(r.limit_mb)}</span></td>`+
+  `<td class="mono">${r.views}</td><td>${r.last_sign_in?fmtDate(tms(r.last_sign_in)):'Never'}</td><td><div class="actions">${admActions(r,true)}</div></td></tr>`;
 }
 function admVisible(){
   const q=adm.q.trim().toLowerCase();
   return adm.rows.filter(r=>ADM_FILTER[adm.filter](r)&&(!q||((r.name||'')+' '+(r.email||'')).toLowerCase().includes(q))).sort(ADM_SORT[adm.sort]);
 }
 function renderAdminTable(){
+  $('#admFilter').value=adm.filter;$('#admSort').value=adm.sort;
   const rows=admVisible();
   $('#admBody').innerHTML=rows.length?rows.map(admRow).join(''):'<tr><td colspan="9">No studios match.</td></tr>';
 }
@@ -1741,39 +1811,64 @@ function admCsv(){
   const lines=[head.map(cell).join(',')].concat(admVisible().map(r=>[r.name,r.email,admStatus(r)[1],r.created_at,r.last_sign_in||'',r.shoots,r.photos,(r.storage_bytes/1048576).toFixed(1),r.limit_mb,r.views].map(cell).join(',')));
   saveBlob(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv'}),'onelogospot-studios.csv');toast('CSV saved');
 }
-async function admShoots(id){
-  adm.open=id;const panel=$('#admShoots');panel.hidden=false;panel.innerHTML='<p class="sub">Loading shoots...</p>';
-  let list=[];try{list=await rpc('admin_list_shoots',{p_studio:id});}catch(e){panel.innerHTML='<p class="notice">Could not load shoots.</p>';return;}
-  const st=adm.rows.find(r=>r.id===id);
+async function admDetail(id,reload){
+  const panel=$('#admDetail'),st=adm.rows.find(r=>r.id===id);
+  if(!st){adm.open=null;panel.hidden=true;return;}
+  adm.open=id;panel.hidden=false;
+  if(reload||adm.shootsFor!==id){
+    panel.innerHTML='<p class="sub">Loading studio...</p>';
+    try{adm.shoots=await rpc('admin_list_shoots',{p_studio:id});adm.shootsFor=id;}
+    catch(e){adm.shoots=[];panel.innerHTML='<p class="notice">Could not load this studio.</p>';return;}
+  }
+  const s=adm.stats||{},lim=st.limit_mb,used=st.storage_bytes,p=admPct(st),[pc,pt]=admStatus(st);
+  const up=TIERS_MB.find(t=>t>lim),down=[...TIERS_MB].reverse().find(t=>t<lim);
+  const downLow=down!=null&&down*1048576<used;
+  const chips=TIERS_MB.map(mb=>`<button class="chip" type="button" data-adm="tier" data-id="${st.id}" data-mb="${mb}" aria-pressed="${mb===lim}"${mb*1048576<used?' disabled title="This studio already uses more than this"':''}>${fmtMB(mb)}</button>`).join('');
   const stat=h=>!h.published?['draft','Draft']:(h.expires_at&&tms(h.expires_at)<Date.now())?['expired','Expired']:['live','Live'];
-  panel.innerHTML=`<h2>Shoots: ${esc(st?(st.name||st.email):'')}</h2>`+(list.length?
+  panel.innerHTML=`<div class="sess-head"><div class="sess-title"><h2>${esc(st.name||'(no name yet)')}</h2><div class="meta"><span class="pill ${pc}">${pt}</span><span>${esc(st.email||'')}</span><span>Registered ${fmtDate(tms(st.created_at))}</span><span>Last login ${st.last_sign_in?fmtDate(tms(st.last_sign_in)):'never'}</span></div></div><div class="sess-actions">${admActions(st,false)}<button class="btn sm" data-adm="close" type="button">Close</button></div></div>`+
+  `<div class="stats"><div class="stat"><b>${st.shoots}</b><span>Shoots</span></div><div class="stat"><b>${st.photos}</b><span>Photos</span></div><div class="stat"><b>${st.views}</b><span>Link opens</span></div><div class="stat"><b>${fmtBytes(used)}</b><span>Storage used</span></div></div>`+
+  `<span class="lbl">Storage allowance: ${fmtMB(lim)}${TIERS_MB.includes(lim)?'':' (custom)'}, ${p.toFixed(0)}% used</span>`+
+  `<div class="meter" aria-hidden="true"><i style="width:${Math.max(p>0?2:0,p)}%;background:${meterColor(p)}"></i></div>`+
+  `<div class="ladder" role="group" aria-label="Storage allowance tiers">${chips}</div>`+
+  `<div class="actions"><button class="btn sm" type="button" data-adm="down" data-id="${st.id}"${down==null||downLow?' disabled':''}>&#9660; Move down a tier${down!=null?' ('+fmtMB(down)+')':''}</button><button class="btn sm primary" type="button" data-adm="up" data-id="${st.id}"${up==null?' disabled':''}>&#9650; Move up a tier${up!=null?' ('+fmtMB(up)+')':''}</button><button class="btn sm" type="button" data-adm="limit" data-id="${st.id}">Custom amount</button></div>`+
+  `<p class="sub">You have promised ${((s.allocated_mb||0)/1024).toFixed(1)} GB across all studios, against a platform cap of ${fmtMB(s.cap_mb||0)}. Change the cap above when you upgrade Supabase.${downLow?' Moving down is blocked because this studio already uses more than the lower tier.':''}</p>`+
+  `<h2>Shoots</h2>`+(adm.shoots.length?
   `<div class="tbl"><table><thead><tr><th>Shoot</th><th>Status</th><th>Photos</th><th>Opens</th><th>Created</th><th>Actions</th></tr></thead><tbody>`+
-  list.map(h=>{const [c,t]=stat(h),link=base()+'#c-'+h.code;
+  adm.shoots.map(h=>{const [c,t]=stat(h),link=base()+'#c-'+h.code;
     return `<tr><td>${esc(h.title)}</td><td><span class="pill ${c}">${t}</span></td><td class="mono">${h.photos}</td><td class="mono">${h.views}</td><td>${fmtDate(tms(h.created_at))}</td>`+
-    `<td><div class="actions"><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Open</a><button class="btn sm" data-adm="spub" data-id="${h.id}" data-pub="${h.published?'0':'1'}" type="button">${h.published?'Unpublish':'Publish'}</button><button class="btn sm danger" data-adm="sdel" data-id="${h.id}" type="button">Delete</button></div></td></tr>`;}).join('')+
+    `<td><div class="actions"><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Open link</a><button class="btn sm" data-adm="spub" data-id="${h.id}" data-pub="${h.published?'0':'1'}" type="button">${h.published?'Unpublish':'Publish'}</button><button class="btn sm danger" data-adm="sdel" data-id="${h.id}" type="button">Delete</button></div></td></tr>`;}).join('')+
   `</tbody></table></div>`:'<p class="sub">This studio has no shoots yet.</p>');
-  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function admOpen(id){await admDetail(id,true);$('#admDetail').scrollIntoView({behavior:'smooth',block:'start'});}
+async function admSetLimit(id,mb){
+  await rpc('admin_set_limit',{p_studio:id,p_mb:mb});toast('Allowance set to '+fmtMB(mb));await admLoad();
 }
 $('#admQ').addEventListener('input',e=>{adm.q=e.target.value;renderAdminTable();});
-$('#admFilter').addEventListener('change',e=>{adm.filter=e.target.value;renderAdminTable();});
-$('#admSort').addEventListener('change',e=>{adm.sort=e.target.value;renderAdminTable();});
+$('#admFilter').addEventListener('change',e=>{adm.filter=e.target.value;renderAdminAll();});
+$('#admSort').addEventListener('change',e=>{adm.sort=e.target.value;renderAdminAll();});
 $('#admExport').addEventListener('click',admCsv);
-$('#admRefresh').addEventListener('click',()=>{admLoad();if(adm.open)admShoots(adm.open);});
+$('#admRefresh').addEventListener('click',admLoad);
 $('#p-admin').addEventListener('click',async e=>{
-  const a=e.target.closest('[data-adm]');if(!a||a.id==='admExport')return;
+  const a=e.target.closest('[data-adm]');
+  if(!a){const tr=e.target.closest('tr[data-row]');if(tr){try{await admOpen(tr.dataset.row);}catch(err){toast(err.message||'Something went wrong');}}return;}
   const act=a.dataset.adm,id=a.dataset.id,st=adm.rows.find(r=>r.id===id),label=st?(st.name||st.email):'this studio';
   try{
-    if(act==='shoots')await admShoots(id);
+    if(act==='card'){adm.filter=a.dataset.f;adm.sort=a.dataset.s;renderAdminAll();$('#admTbl').scrollIntoView({behavior:'smooth',block:'start'});}
+    else if(act==='open')await admOpen(id);
+    else if(act==='close'){adm.open=null;$('#admDetail').hidden=true;}
+    else if(act==='tier'&&st){const mb=+a.dataset.mb;if(mb*1048576<st.storage_bytes){toast('This studio already uses more than '+fmtMB(mb)+'.');return;}await admSetLimit(id,mb);}
+    else if(act==='up'&&st){const t=TIERS_MB.find(x=>x>st.limit_mb);if(!t){toast('Already on the highest tier.');return;}await admSetLimit(id,t);}
+    else if(act==='down'&&st){const t=[...TIERS_MB].reverse().find(x=>x<st.limit_mb);if(!t){toast('Already on the lowest tier.');return;}if(t*1048576<st.storage_bytes){toast('This studio already uses more than '+fmtMB(t)+'.');return;}await admSetLimit(id,t);}
+    else if(act==='limit'&&st){
+      const v=prompt('Storage allowance in MB for '+label,String(st.limit_mb));if(v===null)return;
+      const n=Math.round(+v);if(!(n>=1&&n<=1000000)){toast('Enter a number of MB, for example 2000.');return;}
+      await admSetLimit(id,n);
+    }
     else if(act==='approve'&&st){await rpc('admin_approve',{p_studio:id});toast(label+' approved');await admLoad();}
     else if(act==='toggle'&&st){
       if(!st.disabled&&!confirm('Deactivate '+label+'? They cannot log in and all their client links stop working until you reactivate.'))return;
       await rpc('admin_set_disabled',{p_studio:id,p_disabled:!st.disabled});
       toast(st.disabled?'Studio reactivated':'Studio deactivated');await admLoad();
-    }
-    else if(act==='limit'&&st){
-      const v=prompt('Storage limit in MB for '+label,String(st.limit_mb));if(v===null)return;
-      const n=Math.round(+v);if(!(n>=1&&n<=1000000)){toast('Enter a number of MB, for example 2000.');return;}
-      await rpc('admin_set_limit',{p_studio:id,p_mb:n});toast('Limit saved');await admLoad();
     }
     else if(act==='cap'){
       const v=prompt('Total storage your Supabase plan holds, in MB (free plan is 1024, Pro is 102400)',String(adm.stats?adm.stats.cap_mb:1024));if(v===null)return;
@@ -1789,18 +1884,18 @@ $('#p-admin').addEventListener('click',async e=>{
       const paths=await rpc('admin_paths',{p_studio:id,p_shoot:null});
       await rpc('admin_delete_studio',{p_studio:id});
       try{await storageRemove(paths||[]);}catch(err){toast('Studio deleted, but some files could not be removed from storage.');}
-      if(adm.open===id){adm.open=null;$('#admShoots').hidden=true;}
+      if(adm.open===id){adm.open=null;$('#admDetail').hidden=true;}
       toast('Studio deleted');await admLoad();
     }
     else if(act==='spub'){
-      await rpc('admin_set_shoot_published',{p_shoot:id,p_pub:a.dataset.pub==='1'});toast('Shoot updated');await admShoots(adm.open);await admLoad();
+      await rpc('admin_set_shoot_published',{p_shoot:id,p_pub:a.dataset.pub==='1'});toast('Shoot updated');await admLoad();await admDetail(adm.open,true);
     }
     else if(act==='sdel'){
       if(!confirm('Permanently delete this shoot and all its photos?'))return;
       const paths=await rpc('admin_paths',{p_studio:adm.open,p_shoot:id});
       await rpc('admin_delete_shoot',{p_shoot:id});
       try{await storageRemove(paths||[]);}catch(err){}
-      toast('Shoot deleted');await admShoots(adm.open);await admLoad();
+      toast('Shoot deleted');await admLoad();await admDetail(adm.open,true);
     }
   }catch(err){toast(err.message||'Something went wrong');}
 });
