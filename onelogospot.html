@@ -255,6 +255,7 @@ td:first-child{font-weight:600;white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 
+#admTbl td:first-child{white-space:normal}#admTbl td .actions{gap:6px;flex-wrap:nowrap}
 /* live version additions */
 .pill.expired{color:var(--bad)}
 .ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
@@ -309,6 +310,7 @@ td:first-child{font-weight:600;white-space:nowrap}
       <button data-go="gallery">Gallery <span class="count" id="navCount"></span></button>
       <button data-go="settings">Settings</button>
       <button data-go="setup">Storage and setup</button>
+      <button data-go="admin" id="navAdmin" hidden>Admin</button>
       <button data-act="logout" id="navOut" hidden>Log out</button>
     </nav>
     <div class="linkdock" id="linkdock"></div>
@@ -427,6 +429,21 @@ td:first-child{font-weight:600;white-space:nowrap}
           <div class="clprev" id="bClient"></div>
         </aside>
       </div>
+    </section>
+
+    <!-- ADMIN (master login only) -->
+    <section class="page" id="p-admin" hidden>
+      <header class="ph">
+        <p class="eyebrow">Master admin</p>
+        <h1>All studios</h1>
+        <p class="lede">See every studio account, what it uses, and deactivate, reactivate or delete it. Only the master login can open this page.</p>
+      </header>
+      <div class="stats" id="admStats"></div>
+      <div class="panel">
+        <div class="actions"><div class="field" style="flex:1 1 240px"><label for="admQ">Search</label><input id="admQ" type="text" placeholder="Studio name or email" autocomplete="off"></div><button class="btn" id="admRefresh" type="button">Refresh</button></div>
+        <div class="tbl"><table id="admTbl"><thead><tr><th>Studio</th><th>Status</th><th>Shoots</th><th>Photos</th><th>Storage</th><th>Opens</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="admBody"></tbody></table></div>
+      </div>
+      <div class="panel" id="admShoots" hidden></div>
     </section>
 
     <!-- SETUP -->
@@ -833,11 +850,12 @@ async function copyText(text,input){
 /* ---------- navigation ---------- */
 function go(page){
   state.page=page;
-  ['upload','gallery','settings','setup'].forEach(p=>{$('#p-'+p).hidden=p!==page;});
+  ['upload','gallery','settings','setup','admin'].forEach(p=>{$('#p-'+p).hidden=p!==page;});
   $$('.nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===page?'page':'false'));
   if(page==='gallery')renderGallery();
   if(page==='settings')renderSettings();
   if(page==='setup')renderSetup();
+  if(page==='admin')renderAdmin();
   window.scrollTo(0,0);
 }
 $$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go)go(b.dataset.go);}));
@@ -1410,7 +1428,7 @@ async function loadCloudData(){
   state.sessions=sh.map(mapShoot);state.photos=ph.map(mapPhoto);
 }
 async function loadStudio(){
-  const rows=await http('/rest/v1/studios?id=eq.'+sess.user.id+'&select=business_name,line2,logo_mode,logo_path,logo_w,logo_h,settings,storage_limit_mb');
+  const rows=await http('/rest/v1/studios?id=eq.'+sess.user.id+'&select=business_name,line2,logo_mode,logo_path,logo_w,logo_h,settings,storage_limit_mb,disabled');
   const r=rows&&rows[0];if(!r)throw new Error('Your studio record is missing. Run the setup SQL again.');
   studioRow=r;
   Object.assign(brand,{mode:r.logo_mode||'text',name:r.business_name||'',line2:r.line2||'',img:'',iw:r.logo_w||0,ih:r.logo_h||0,path:r.logo_path||''});
@@ -1597,13 +1615,16 @@ function consumeAuthHash(){
 }
 async function enterStudio(){
   await loadStudio();
+  if(studioRow.disabled){storeSess(null);showAuth('in','This account has been deactivated. Contact BYINFORGH.');return;}
   await Promise.all([fontsReady(),loadBrandImg()]);
   await loadCloudData();
   assetsReady=true;sceneBase=scene(7,1200,800);prevBase=sceneBase;
   $('#auth').hidden=true;$('#client').hidden=true;$('#shell').hidden=false;
   $('#acctLine').hidden=false;$('#acctLine').textContent='Signed in as '+sess.user.email+'.';
   syncControls();redrawPreview();renderDock();renderNavCount();renderBrandBanner();
-  go(brandReady()?'upload':'settings');
+  isAdmin=false;try{isAdmin=(await http('/rest/v1/rpc/is_admin',{method:'POST',json:{}}))===true;}catch(e){}
+  $('#navAdmin').hidden=!isAdmin;
+  go(isAdmin?'admin':(brandReady()?'upload':'settings'));
 }
 async function cloudInit(){
   $$('.local-only').forEach(e=>{e.hidden=true;});
@@ -1625,6 +1646,84 @@ async function cloudInit(){
   if(sess){try{await enterStudio();return;}catch(e){const lost=/log in/i.test(e.message||'');if(lost)storeSess(null);showAuth('in',lost?'':(e.message||''));return;}}
   showAuth('in');
 }
+
+/* ---------- master admin ---------- */
+let isAdmin=false;
+const adm={rows:[],open:null,q:''};
+const rpc=(name,json)=>http('/rest/v1/rpc/'+name,{method:'POST',json:json||{}});
+function renderAdmin(){if(!isAdmin){go('upload');return;}admLoad();}
+async function admLoad(){
+  try{adm.rows=await rpc('admin_list_studios');}catch(e){toast('Could not load studios. '+(e.message||''));adm.rows=[];}
+  renderAdminTable();
+}
+function admRow(r){
+  const me=sess&&r.id===sess.user.id;
+  const btns=me?'<span class="sub">You (master)</span>':
+    `<button class="btn sm" data-adm="toggle" data-id="${r.id}">${r.disabled?'Reactivate':'Deactivate'}</button><button class="btn sm danger" data-adm="del" data-id="${r.id}">Delete</button>`;
+  return `<tr><td><b>${esc(r.name||'(no name yet)')}</b><br><span class="sub">${esc(r.email||'')}</span></td>`+
+  `<td><span class="pill ${r.disabled?'failed':'live'}">${r.disabled?'Deactivated':'Active'}</span></td>`+
+  `<td class="mono">${r.shoots}</td><td class="mono">${r.photos}</td>`+
+  `<td class="mono">${fmtBytes(r.bytes)} / ${r.limit_mb} MB</td><td class="mono">${r.views}</td>`+
+  `<td>${r.last_sign_in?fmtDate(Date.parse(r.last_sign_in)):'Never'}</td>`+
+  `<td><div class="actions"><button class="btn sm" data-adm="shoots" data-id="${r.id}">Shoots</button><button class="btn sm" data-adm="limit" data-id="${r.id}">Limit</button>${btns}</div></td></tr>`;
+}
+function renderAdminTable(){
+  const q=adm.q.trim().toLowerCase();
+  const rows=adm.rows.filter(r=>!q||((r.name||'')+' '+(r.email||'')).toLowerCase().includes(q));
+  const ph=adm.rows.reduce((t,r)=>t+r.photos,0),by=adm.rows.reduce((t,r)=>t+r.bytes,0);
+  $('#admStats').innerHTML=[['Studios',adm.rows.length],['Active',adm.rows.filter(r=>!r.disabled).length],['Photos',ph],['Storage used',fmtBytes(by)]].map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('#admBody').innerHTML=rows.length?rows.map(admRow).join(''):'<tr><td colspan="8">No studios found.</td></tr>';
+}
+async function admShoots(id){
+  adm.open=id;const panel=$('#admShoots');panel.hidden=false;panel.innerHTML='<p class="sub">Loading shoots...</p>';
+  let list=[];try{list=await rpc('admin_list_shoots',{p_studio:id});}catch(e){panel.innerHTML='<p class="notice">Could not load shoots.</p>';return;}
+  const st=adm.rows.find(r=>r.id===id);
+  const stat=h=>!h.published?['draft','Draft']:(h.expires_at&&Date.parse(h.expires_at)<Date.now())?['expired','Expired']:['live','Live'];
+  panel.innerHTML=`<h2>Shoots: ${esc(st?(st.name||st.email):'')}</h2>`+(list.length?
+  `<div class="tbl"><table><thead><tr><th>Shoot</th><th>Status</th><th>Photos</th><th>Opens</th><th>Created</th><th>Actions</th></tr></thead><tbody>`+
+  list.map(h=>{const [c,t]=stat(h),link=base()+'#c-'+h.code;
+    return `<tr><td>${esc(h.title)}</td><td><span class="pill ${c}">${t}</span></td><td class="mono">${h.photos}</td><td class="mono">${h.views}</td><td>${fmtDate(Date.parse(h.created_at))}</td>`+
+    `<td><div class="actions"><a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener">Open</a><button class="btn sm" data-adm="spub" data-id="${h.id}" data-pub="${h.published?'0':'1'}">${h.published?'Unpublish':'Publish'}</button><button class="btn sm danger" data-adm="sdel" data-id="${h.id}">Delete</button></div></td></tr>`;}).join('')+
+  `</tbody></table></div>`:'<p class="sub">This studio has no shoots yet.</p>');
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('#admQ').addEventListener('input',e=>{adm.q=e.target.value;renderAdminTable();});
+$('#admRefresh').addEventListener('click',()=>{admLoad();if(adm.open)admShoots(adm.open);});
+$('#p-admin').addEventListener('click',async e=>{
+  const a=e.target.closest('[data-adm]');if(!a)return;
+  const act=a.dataset.adm,id=a.dataset.id,st=adm.rows.find(r=>r.id===id),label=st?(st.name||st.email):'this studio';
+  try{
+    if(act==='shoots')await admShoots(id);
+    else if(act==='toggle'&&st){
+      if(!st.disabled&&!confirm('Deactivate '+label+'? They cannot log in and all their client links stop working until you reactivate.'))return;
+      await rpc('admin_set_disabled',{p_studio:id,p_disabled:!st.disabled});
+      toast(st.disabled?'Studio reactivated':'Studio deactivated');await admLoad();
+    }
+    else if(act==='limit'&&st){
+      const v=prompt('Storage limit in MB for '+label,String(st.limit_mb));if(v===null)return;
+      const n=Math.round(+v);if(!(n>=1&&n<=1000000)){toast('Enter a number of MB, for example 2000.');return;}
+      await rpc('admin_set_limit',{p_studio:id,p_mb:n});toast('Limit saved');await admLoad();
+    }
+    else if(act==='del'&&st){
+      if(!confirm('Permanently delete '+label+', their account, every shoot and every photo? This cannot be undone.'))return;
+      const paths=await rpc('admin_paths',{p_studio:id,p_shoot:null});
+      await rpc('admin_delete_studio',{p_studio:id});
+      try{await storageRemove(paths||[]);}catch(err){toast('Studio deleted, but some files could not be removed from storage.');}
+      if(adm.open===id){adm.open=null;$('#admShoots').hidden=true;}
+      toast('Studio deleted');await admLoad();
+    }
+    else if(act==='spub'){
+      await rpc('admin_set_shoot_published',{p_shoot:id,p_pub:a.dataset.pub==='1'});toast('Shoot updated');await admShoots(adm.open);
+    }
+    else if(act==='sdel'){
+      if(!confirm('Permanently delete this shoot and all its photos?'))return;
+      const paths=await rpc('admin_paths',{p_studio:adm.open,p_shoot:id});
+      await rpc('admin_delete_shoot',{p_shoot:id});
+      try{await storageRemove(paths||[]);}catch(err){}
+      toast('Shoot deleted');await admShoots(adm.open);await admLoad();
+    }
+  }catch(err){toast(err.message||'Something went wrong');}
+});
 
 /* ---------- boot ---------- */
 async function init(){
