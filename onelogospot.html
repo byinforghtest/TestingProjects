@@ -590,7 +590,7 @@ const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelect
 /* ---------- live version connection ----------
    Leave both values empty to run the offline sample (photos stay in this browser).
    Paste your Supabase Project URL and publishable (anon) key between the quotes to switch the live version on. */
-const CLOUD={url:'',key:''};
+const CLOUD={url:'https://utxhqjnqkixjojoqhcqz.supabase.co',key:'sb_publishable_w1JuHt3Hg4lSRoYG0P-rEw_DIqXcTd2'};
 CLOUD.url=CLOUD.url.trim().replace(/\/+$/,'');CLOUD.key=CLOUD.key.trim();
 const CLOUDON=!!(CLOUD.url&&CLOUD.key);
 if(CLOUDON)$('#shell').hidden=true;
@@ -1369,7 +1369,7 @@ function niceAuthError(j,status){
 }
 async function authCall(path,method,json,bearer){
   let res;
-  try{res=await fetch(CLOUD.url+path,{method,headers:{apikey:CLOUD.key,Authorization:'Bearer '+(bearer||CLOUD.key),'Content-Type':'application/json'},body:JSON.stringify(json)});}
+  try{res=await fetch(CLOUD.url+path,{method,headers:{apikey:CLOUD.key,...((bearer||!CLOUD.key.startsWith('sb_'))?{Authorization:'Bearer '+(bearer||CLOUD.key)}:{}),'Content-Type':'application/json'},body:JSON.stringify(json)});}
   catch(e){throw new Error('No connection. Check your internet and try again.');}
   let j=null;try{j=await res.json();}catch(e){}
   if(!res.ok)throw new Error(niceAuthError(j,res.status));
@@ -1388,7 +1388,7 @@ async function getToken(){
 async function http(path,o={}){
   const h={apikey:CLOUD.key,...(o.headers||{})};
   if(o.json!==undefined)h['Content-Type']='application/json';
-  h.Authorization='Bearer '+(o.anon?CLOUD.key:await getToken());
+  if(o.anon){if(!CLOUD.key.startsWith('sb_'))h.Authorization='Bearer '+CLOUD.key;}else h.Authorization='Bearer '+await getToken();
   let res;
   try{res=await fetch(CLOUD.url+path,{method:o.method||'GET',headers:h,body:o.json!==undefined?JSON.stringify(o.json):o.body});}
   catch(e){throw new Error('No connection. Check your internet and try again.');}
