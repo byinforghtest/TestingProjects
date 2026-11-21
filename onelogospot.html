@@ -323,6 +323,68 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
 .lb-bar select{background:transparent;color:#F2F3F3;border:1px solid #3A3D40;border-radius:6px;padding:5px 6px}.lb-bar select option{color:#0D0E0F}
 @media (max-width:880px){.tour.lft{left:auto;right:16px}.topbar{position:static}main{padding-bottom:130px}.tour{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* v3: bigger working area, numbered blue steps, locked-until-branded, Help me guide */
+:root{--gutter:clamp(12px,1.6vw,26px)}
+.shell{grid-template-columns:244px minmax(0,1fr)}
+.wm b{font-size:22px}
+.side{padding:18px 12px 12px;gap:16px}
+.brand{width:160px}
+.page{max-width:1680px;gap:16px}
+.ph{max-width:none}.ph .lede{max-width:90ch}
+.eyebrow{color:var(--accent)}
+.panel h2{color:var(--accent)}
+.ctl .lbl,.field label{color:var(--ink-2)}
+.ctl>.lbl{color:var(--accent)}
+.up-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px}
+.panel{padding:16px;gap:12px}
+.sh{display:flex;align-items:center;flex-wrap:wrap;gap:10px;font:800 17px/1.2 var(--font-display)!important;letter-spacing:0!important;text-transform:none!important;color:var(--accent)}
+.sh i{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:800 14px/28px var(--font-display);text-align:center;font-style:normal}
+.req{font:700 11px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.panel.step{border-left:4px solid var(--accent)}
+.callout{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--accent);border-left-width:5px;border-radius:4px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));font-size:14px}
+.callout b{color:var(--accent);font:700 14px var(--font-display)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.stp{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;gap:2px 10px;align-items:start;text-align:left;padding:10px 12px;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:4px;background:var(--surface)}
+.stp:hover{border-color:var(--accent)}
+.stp .n{grid-row:1/3;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:800 13px/26px var(--font-display);text-align:center}
+.stp.done .n{background:var(--ok);color:#fff}
+.stp .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stp .tx b{color:var(--accent);font:700 14px/1.25 var(--font-display)}
+.stp .tx span{font-size:12.5px;color:var(--ink-2);line-height:1.35}
+.stp em{grid-column:2;font:600 12px var(--font-body);font-style:normal;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.place-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:20px;align-items:start}
+.place-prev,.place-ctl{display:flex;flex-direction:column;gap:12px;min-width:0}
+.posgrid{grid-template-columns:repeat(3,40px)}.posgrid button,.tilebtn{height:40px}
+.queue{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.sheet{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.drop{padding:34px 16px}
+.nav button.locked{opacity:.45}
+.nav button.first,.nav button.first[aria-current=page]{background:var(--accent);color:var(--accent-ink)}
+.nav button[data-act=logout]{order:9}
+.spot,.tour-hl{outline:3px solid var(--accent)!important;outline-offset:4px;border-radius:6px;scroll-margin-top:76px;animation:spotpulse 1.3s ease-in-out infinite}
+@keyframes spotpulse{50%{outline-offset:9px}}
+.nav button.spot{outline-offset:2px}
+.pin{position:fixed;z-index:70;max-width:min(320px,calc(100vw - 16px));background:var(--accent);color:var(--accent-ink);font:700 12.5px/1.3 var(--font-body);padding:6px 11px;border-radius:999px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.28);transform:translateY(-100%)}
+.spotbar{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:65;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:center;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:8px;background:var(--surface);color:var(--ink);border:2px solid var(--accent);box-shadow:0 8px 30px rgba(0,0,0,.25);font-weight:600;font-size:14px}
+.helptab{position:fixed;right:0;top:42%;z-index:55;display:flex;align-items:center;gap:8px;writing-mode:vertical-rl;padding:14px 8px;border:0;border-radius:10px 0 0 10px;background:var(--accent);color:var(--accent-ink);font:700 13px var(--font-body);letter-spacing:.04em;box-shadow:-2px 2px 10px rgba(0,0,0,.2);transition:padding .15s}
+.helptab:hover,.helptab:focus-visible{padding-right:14px}
+.helptab .q{writing-mode:horizontal-tb;width:22px;height:22px;border-radius:50%;background:var(--accent-ink);color:var(--accent);font:800 14px/22px var(--font-display);text-align:center}
+.helppanel{position:fixed;top:0;right:0;bottom:0;z-index:58;width:min(360px,100vw);display:flex;flex-direction:column;gap:12px;padding:16px;background:var(--surface);color:var(--ink);border-left:3px solid var(--accent);box-shadow:-8px 0 30px rgba(0,0,0,.22);overflow-y:auto;transform:translateX(105%);visibility:hidden;transition:transform .2s,visibility .2s}
+.helppanel.open{transform:none;visibility:visible}
+.hp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hp-head h2{font:800 20px/1.1 var(--font-display);color:var(--accent);margin-top:4px}
+.hp-list{display:flex;flex-direction:column;gap:6px}
+.hp-g{font:700 12px var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:8px}
+.hitem{display:flex;flex-direction:column;gap:1px;text-align:left;padding:9px 12px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:4px;background:var(--bg)}
+.hitem:hover{border-color:var(--accent)}
+.hitem b{font:700 14px var(--font-body)}.hitem span{font-size:12.5px;color:var(--ink-2)}
+.hitem.locked{opacity:.55}
+#shell[hidden]~.helptab,#shell[hidden]~.helppanel,#shell[hidden]~.spotbar,#shell[hidden]~.pin{display:none!important}
+.tour h3{color:var(--accent)}
+@media (max-width:1060px){.place-grid,.up-grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:880px){.helptab{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px))}.spotbar{bottom:calc(86px + env(safe-area-inset-bottom,0px))}.nav button.locked{opacity:.55}}
+@media (max-width:520px){.steps{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -343,48 +405,40 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
   </aside>
 
   <main>
-    <div class="topbar"><button class="btn sm primary" id="btnPreview" type="button">Preview as client</button><button class="btn sm" id="tbGuide" type="button">Guide</button><button class="btn sm" id="tbReq" data-act="req" type="button" hidden>More storage</button></div>
+    <div class="topbar"><button class="btn sm primary" id="btnPreview" type="button">Preview as client</button><button class="btn sm" id="tbReq" data-act="req" type="button" hidden>More storage</button></div>
     <!-- UPLOAD -->
     <section class="page" id="p-upload">
       <header class="ph">
         <p class="eyebrow">Upload</p>
         <h1>New photo batch</h1>
-        <p class="lede">Drop up to <span class="maxn">20</span> photos. Your logo goes on every picture and a link for your client is created for the batch.</p>
+        <p class="lede">Follow the four blue steps from top to bottom. Your logo goes on every picture and a link for your client is created for the batch. Up to <span class="maxn">20</span> photos at a time.</p>
       </header>
+      <div class="steps" id="steps-upload" aria-label="Steps for this page"></div>
       <div class="banner" id="brandBanner" hidden><div><b>Add your logo before you upload</b><span>OneLogoSpot puts your logo on every photo. Set it up once in Settings.</span></div><button class="btn primary" data-act="goto-settings">Open Settings</button></div>
-      <p class="sub" id="brandNote" hidden></p>
+      
       <p class="sub" id="usageLine" hidden></p>
-      <div class="up-grid">
-        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
-          <div class="panel">
-            <div class="field">
+      <div class="panel step" id="stName">
+        <h2 class="sh"><i>1</i>Name this shoot</h2>
+        <p class="sub">Type the client or event name, for example the couple, the family or the occasion. You will see this name in your Gallery.</p>
+        <div class="field">
               <label for="sessionName">Client or shoot name</label>
               <input id="sessionName" type="text" maxlength="60" placeholder="Mensah wedding, 3 Oct" autocomplete="off">
             </div>
             <div class="field" id="targetWrap" hidden><label for="targetShoot">Add to</label><select id="targetShoot"><option value="">A new shoot (new link)</option></select><p class="sub">Pick an existing shoot to add more photos to the same client link. Useful for big shoots with thousands of photos.</p></div>
-            <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose photos to upload">
-              <div class="ico" id="dropIco"></div>
-              <b>Drop photos here</b>
-              <span>JPG, PNG or WebP. Up to <span class="maxn">20</span> photos, 30 MB each.</span>
-              <button class="btn primary" type="button" id="pick">Choose photos</button>
-            </div>
-            <input id="file" type="file" multiple accept="image/jpeg,image/png,image/webp" hidden>
-            <div class="counter"><div class="ticks" id="ticks" aria-hidden="true"></div><span class="mono" id="countTxt">0 / 20 photos</span></div>
-            <div class="switchrow">
-              <div class="t"><b id="lblAuto">Add the logo as soon as photos are chosen</b><span>Turn off to review the batch and the logo placement first.</span></div>
-              <button class="switch" id="swAuto" role="switch" aria-checked="true" aria-labelledby="lblAuto"></button>
-            </div>
-            <div class="actions" id="upActions"></div>
-            <p class="notice" id="notice" hidden></p>
-            <ul class="queue" id="queue"></ul>
-          </div>
-          <div class="panel done-card" id="doneCard" hidden></div>
-        </div>
-        <aside class="panel" aria-label="Logo placement">
-          <h2>Logo placement</h2>
-          <canvas class="prev" id="prev" width="1200" height="800" aria-label="Preview of the logo on a photo"></canvas>
+            
+      </div>
+      <section class="panel step" id="stPlace" aria-label="Logo placement">
+        <h2 class="sh"><i>2</i>Place your logo</h2>
+        <p class="sub">The big picture on the left is a preview of your logo on a photo. Use the controls on the right to move or resize it. The preview updates as you tap.</p>
+        <div class="place-grid">
+          <div class="place-prev">
+            <canvas class="prev" id="prev" width="1200" height="800" aria-label="Preview of the logo on a photo"></canvas>
           <div class="prevcap"><span id="prevName">Sample frame</span><span class="mono" id="prevDims"></span></div>
-          <div class="ctl">
+          
+            <p class="sub" id="brandNote" hidden></p>
+          </div>
+          <div class="place-ctl">
+            <div class="ctl">
             <span class="lbl">Position</span>
             <div class="posrow">
               <div class="posgrid" id="posgrid" role="group" aria-label="Logo position"></div>
@@ -399,8 +453,30 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
           <div class="rng"><label for="rSize">Size</label><output id="oSize"></output><input id="rSize" type="range" min="8" max="60" step="1"></div>
           <div class="rng"><label for="rOp">Opacity</label><output id="oOp"></output><input id="rOp" type="range" min="20" max="100" step="1"></div>
           <div class="rng"><label for="rMg">Edge margin</label><output id="oMg"></output><input id="rMg" type="range" min="1" max="10" step="1"></div>
-        </aside>
+        
+          </div>
+        </div>
+      </section>
+      <div class="panel step" id="stPhotos">
+        <h2 class="sh"><i>3</i>Add your photos</h2>
+        <p class="sub">Drop photos in the box or press <b>Choose photos</b>. Your logo is added for you.</p>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose photos to upload">
+              <div class="ico" id="dropIco"></div>
+              <b>Drop photos here</b>
+              <span>JPG, PNG or WebP. Up to <span class="maxn">20</span> photos, 30 MB each.</span>
+              <button class="btn primary" type="button" id="pick">Choose photos</button>
+            </div>
+            <input id="file" type="file" multiple accept="image/jpeg,image/png,image/webp" hidden>
+            <div class="counter"><div class="ticks" id="ticks" aria-hidden="true"></div><span class="mono" id="countTxt">0 / 20 photos</span></div>
+            <div class="switchrow">
+              <div class="t"><b id="lblAuto">Add the logo as soon as photos are chosen</b><span>Turn off to review the batch and the logo placement first.</span></div>
+              <button class="switch" id="swAuto" role="switch" aria-checked="true" aria-labelledby="lblAuto"></button>
+            </div>
+            <div class="actions" id="upActions"></div>
+            <p class="notice" id="notice" hidden></p>
+            <ul class="queue" id="queue"></ul>
       </div>
+      <div class="panel done-card step" id="doneCard" hidden></div>
     </section>
 
     <!-- GALLERY -->
@@ -410,6 +486,7 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
         <h1>Photos with your logo</h1>
         <p class="lede">Every batch becomes a shoot with its own client link. Open a photo to see it full size.</p>
       </header>
+      <div class="steps" id="steps-gallery" aria-label="Steps for this page"></div>
       <div class="panel">
         <div class="switchrow">
           <div class="t"><b id="lblPub">Put new uploads in the gallery automatically</b><span>When this is off, new batches wait as drafts and the client link stays closed until you publish.</span></div>
@@ -425,12 +502,15 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
       <header class="ph">
         <p class="eyebrow">Settings</p>
         <h1>Your branding</h1>
-        <p class="lede">Add your business logo or name once. It goes on every photo you upload and appears at the top of your client galleries.</p>
+        <p class="lede">Add your business logo or name once. It goes on every photo you upload and appears at the top of your client galleries. After this, the rest of OneLogoSpot opens up and this page moves to the bottom of the menu.</p>
       </header>
+      <div class="callout" id="reqCallout" hidden><b>Required first step</b><span>Add your logo or your business name below. Upload, Gallery and Storage stay locked until you do, because your logo is what goes on every photo.</span></div>
+      <div class="steps" id="steps-settings" aria-label="Steps for this page"></div>
       <div class="up-grid">
-        <div class="panel">
+        <div class="panel step" id="stBrand">
+          <h2 class="sh"><i>1</i>Your logo or business name <span class="req">Required</span></h2>
           <div class="field"><label for="bName">Business name</label><input id="bName" type="text" maxlength="40" placeholder="Your business name" autocomplete="off"></div>
-          <div class="ctl"><span class="lbl">Logo on your photos</span>
+          <div class="ctl" id="logoTypeWrap"><span class="lbl">Choose one: your own logo file, or your business name as a logo</span>
             <div class="seg" id="segMode" role="group" aria-label="Logo type"><button data-mode="image" aria-pressed="false">Upload my logo</button><button data-mode="text" aria-pressed="true">Use my business name</button></div>
           </div>
           <div id="modeImage" class="ctl" hidden>
@@ -450,8 +530,8 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
           <p class="sub">Changes apply to photos you upload next. Photos already uploaded keep the logo they were made with.</p>
           <div class="actions"><button class="btn primary" id="toUpload" data-act="to-upload">Continue to Upload</button><button class="btn" id="logoSvg" type="button">Save logo as SVG</button></div>
         </div>
-        <aside class="panel" aria-label="Branding preview">
-          <h2>Preview</h2>
+        <aside class="panel step" id="stPreview" aria-label="Branding preview">
+          <h2 class="sh"><i>2</i>Check the preview</h2>
           <canvas class="prev" id="bPrev" width="1200" height="800" aria-label="Your logo on a sample photo"></canvas>
           <p class="sub" id="bCap"></p>
           <span class="lbl">Top of your client gallery</span>
@@ -502,6 +582,7 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
         <h1>Where the photos live</h1>
         <p class="lede" id="setupLede">This page is a working sample. It keeps photos inside your browser so you can try the whole flow. This page explains where they go on a live website.</p>
       </header>
+      <div class="steps" id="steps-setup" aria-label="Steps for this page"></div>
 
       <div class="cols2">
         <div class="panel">
@@ -650,6 +731,14 @@ body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
   <div class="lb-stage"><button class="lb-nav prev-b" id="lbPrev" aria-label="Previous photo">&#8592;</button><img id="lbImg" alt=""><button class="lb-nav next-b" id="lbNext" aria-label="Next photo">&#8594;</button></div>
 </div>
 <div class="qr" id="req" hidden role="dialog" aria-modal="true" aria-label="Request more storage"><div class="qr-card" style="text-align:left;align-items:stretch"><h2 style="font:700 16px var(--font-display);text-transform:uppercase">Request more storage</h2><p class="sub" id="reqInfo"></p><div class="field"><label for="reqMb">New total allowance</label><select id="reqMb"></select></div><div class="field"><label for="reqNote">Note (optional)</label><input id="reqNote" type="text" maxlength="300" placeholder="For example, 3,000 wedding photos"></div><p class="sub" id="reqMsg" role="status"></p><div class="actions"><button class="btn primary sm" id="reqSend" type="button">Send request</button><button class="btn sm" id="reqClose" type="button">Close</button></div></div></div>
+<button class="helptab" id="helpTab" type="button" aria-expanded="false" aria-controls="helpPanel"><span class="q" aria-hidden="true">?</span><span>Help me guide</span></button>
+<aside class="helppanel" id="helpPanel" aria-hidden="true" aria-label="Help me guide">
+  <div class="hp-head"><div><p class="eyebrow">Help me guide</p><h2>Where is everything?</h2></div><button class="btn sm" id="helpClose" type="button" aria-label="Close help">Close</button></div>
+  <p class="sub">Tap anything below. I will take you to that screen and highlight it in blue.</p>
+  <div id="helpList" class="hp-list"></div>
+  <button class="btn" id="helpTour" type="button">Replay the step-by-step tour</button>
+</aside>
+<div class="spotbar" id="spotbar" hidden role="status"><span id="spotTxt"></span><button class="btn sm" id="spotHelp" type="button">Back to Help me</button><button class="btn sm primary" id="spotDone" type="button">Got it</button></div>
 <div class="tour" id="tour" hidden role="dialog" aria-label="Platform guide"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="qr" id="qr" hidden role="dialog" aria-modal="true" aria-label="QR code"><div class="qr-card"><canvas id="qrCv" width="300" height="300"></canvas><p class="sub" id="qrCap"></p><div class="actions"><button class="btn primary sm" id="qrDl">Save QR image</button><button class="btn sm" id="qrClose">Close</button></div></div></div>
@@ -773,8 +862,9 @@ function drawBrandPreview(){
 function renderBrandBanner(){
   const ok=brandReady();
   $('#brandBanner').hidden=ok;$('#brandNote').hidden=!ok;$('#drop').classList.toggle('off',!ok);
-  if(ok)$('#brandNote').innerHTML='Logo in use: <b>'+esc(brand.mode==='image'?(brandName()||'your uploaded logo'):brandName())+'</b>. <button class="linkbtn" data-act="goto-settings">Change in Settings</button>';
+  if(ok)$('#brandNote').innerHTML='Logo in use: <b>'+esc(brand.mode==='image'?(brandName()||'your uploaded logo'):brandName())+'</b>. <button class="linkbtn" data-act="goto-settings">Change it in Settings</button>';
   const t=$('#toUpload');if(t)t.disabled=!ok;
+  renderGate();
 }
 function renderSettings(){
   $('#bName').value=brand.name||'';$('#bLine2').value=brand.line2||'';{const wa=$('#bWa');if(wa)wa.value=settings.whatsapp||'';}
@@ -902,14 +992,16 @@ async function copyText(text,input){
 }
 
 /* ---------- navigation ---------- */
-function go(page){
-  state.page=page;
+function go(page,force){
+  if(!force&&gateBlocks(page)){toast('Add your logo or business name first. It is required.');page='settings';}
+  clearSpot();state.page=page;
   ['upload','gallery','settings','setup','admin'].forEach(p=>{$('#p-'+p).hidden=p!==page;});
   $$('.nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.go===page?'page':'false'));
   if(page==='gallery')renderGallery();
   if(page==='settings')renderSettings();
   if(page==='setup')renderSetup();
   if(page==='admin')renderAdmin();
+  renderGate();renderSteps(page,true);
   window.scrollTo(0,0);
 }
 $$('.nav button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.go)go(b.dataset.go);}));
@@ -1063,7 +1155,7 @@ function renderDone(){
   if(batch.phase!=='done'||!s){card.hidden=true;return;}
   const n=sessPhotos(s.id).length,link=linkFor(s);
   card.hidden=false;
-  card.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2>${n} photo${n>1?'s':''} ready</h2>${pillHtml(s)}</div>`+
+  card.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2 class="sh"><i>4</i>${n} photo${n>1?'s':''} ready. Send your link</h2>${pillHtml(s)}</div>`+
   `<p class="sub">${esc(s.title)}. ${s.published?'Send this link to your client.':'This shoot is a draft. Publish it in the gallery to open the link.'}</p>`+
   `<div class="linkrow"><input id="doneInput" readonly value="${esc(link)}" aria-label="Client link"><button class="btn primary" data-act="copy-done">Copy link</button></div>`+
   `${CLOUDON?shareHtml(link,s.title)+'<p class="sub">Your client can open this link on any phone or computer and download the photos.</p>':'<p class="notice">Test version: this link opens on this device only. To send these photos to a client now, use Download gallery file.</p>'}<div class="actions">${CLOUDON?`<a class="btn primary" href="${waLink(s)}" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn" data-act="qr-done">QR code</button>`:''}<button class="btn${CLOUDON?'':' primary'}" data-act="export-done">Download gallery file</button><button class="btn" data-act="to-gallery">Open gallery</button>${s.published?'<button class="btn" data-act="preview-done">Preview as client</button>':''}</div>`;
@@ -1431,27 +1523,31 @@ $('#admReq').addEventListener('click',async e=>{
     toast(a.dataset.rq==='ok'?'Approved':'Declined');await admLoad();}catch(err){toast(err.message||'Something went wrong');}
 });
 const TOUR=[
-['settings','#segMode','Step 1 of 8: Add your logo',['<b>Upload my logo</b> puts your own logo file on every photo. A PNG with a see-through background works best.','<b>Use my business name</b> turns your name into a bold text logo.','<b>Continue to Upload</b> saves it and takes you to step 2.']],
-['upload','#drop','Step 2 of 8: Upload photos',['Type the <b>client or shoot name</b> first.','Drop photos here or press <b>Choose photos</b>.','Keep <b>Add the logo as soon as photos are chosen</b> on for speed, or switch it off to check the placement first.']],
-['upload','aside[aria-label="Logo placement"]','Step 3 of 8: Place your logo',['The grid sets the <b>position</b>. <b>Tiled</b> repeats the logo across the photo, good for proofs.','<b>Colour</b>: Auto picks black or white to suit the photo.','<b>Size, Opacity</b> and <b>Edge margin</b> fine-tune it. <b>Economy</b> saves storage, <b>Standard</b> keeps more detail.']],
-['upload','#linkdock','Step 4 of 8: Your client link',['After an upload your link appears here and on the Upload page.','<b>Copy</b> it, share it on WhatsApp, Facebook, X, Telegram or email, or show the <b>QR code</b> for people to scan.']],
-['gallery','#swPub','Step 5 of 8: Manage your gallery',['<b>Publish</b> opens a link. <b>Unpublish</b> closes it.','Each shoot can have an <b>expiry date</b> and a <b>password</b>.','<b>Save as PDF</b>, <b>Download gallery file</b> and <b>Delete shoot</b> sit on each shoot. Open any photo to save it as JPEG, PNG or PDF.']],
-['gallery','#btnPreview','Step 6 of 8: Preview as your client',['<b>Preview as client</b> is always at the top of every page. It shows exactly what your client sees.','Clients tap the <b>heart</b> on favourites, send their picks to your WhatsApp, and can download everything.']],
-['setup','#stats','Step 7 of 8: Your storage',['See how much of your allowance you have used.','Press <b>Request more storage</b> whenever you need more. BYINFORGH reviews each request.']],
-['upload',null,'Step 8 of 8: You are ready',['Keep your original photos. Gallery copies are not a backup.','Open this guide again any time with <b>Guide</b> at the top.']]];
+['settings','#segMode','Add your logo or business name',['This is <b>required</b> and it comes first.','Tap <b>Upload my logo</b> to use a logo file, or <b>Use my business name</b> to turn your name into a logo.','Then look at the <b>Check the preview</b> box on the right to see how it looks.']],
+['upload','#stName','Name your shoot',['Type the <b>client or event name</b> in the first blue step.','If you are adding to an earlier shoot, pick it from <b>Add to</b>.']],
+['upload','#stPlace','Place your logo',['The big picture is your <b>preview</b>. It changes as you tap.','Pick a <b>position</b> from the grid, or <b>Tiled</b> to repeat it across the photo.','<b>Colour</b>, <b>Size</b>, <b>Opacity</b> and <b>Edge margin</b> fine-tune it. <b>Presets</b> are quick starts.']],
+['upload','#stPhotos','Add your photos',['Drop photos in the box or press <b>Choose photos</b>.','Keep <b>Add the logo as soon as photos are chosen</b> on for speed, or switch it off to check the placement first.']],
+['upload','#linkdock','Copy your client link',['After an upload your link appears here and in the <b>step 4</b> box on the Upload page.','<b>Copy</b> it, share it on WhatsApp, Facebook, X, Telegram or email, or show the <b>QR code</b>.']],
+['gallery','#swPub','Manage your gallery',['<b>Publish</b> opens a link. <b>Unpublish</b> closes it.','Each shoot can have an <b>expiry date</b> and a <b>password</b>.','<b>Save as PDF</b>, <b>Download gallery file</b> and <b>Delete shoot</b> sit on each shoot. Open any photo to save it as JPEG, PNG or PDF.']],
+['gallery','#btnPreview','Preview as your client',['<b>Preview as client</b> is at the top of every page. It shows exactly what your client sees.','Clients tap the <b>heart</b> on favourites, send their picks to your WhatsApp, and can download everything.']],
+['setup','#stats','Your storage',['See how much of your allowance you have used.','Press <b>Request more storage</b> whenever you need more. BYINFORGH reviews each request.']],
+['upload',null,'You are ready',['Keep your original photos. Gallery copies are not a backup.','Lost? Open the <b>Help me guide</b> tab on the right edge of the page. It points to anything and highlights it.']]];
 let tourI=-1;
 const clearHl=()=>$$('.tour-hl').forEach(x=>x.classList.remove('tour-hl'));
-function startTour(){tourI=0;showTour();}
+function startTour(){helpOpen(false);tourI=0;showTour();}
 function endTour(done){
   clearHl();$('#tour').hidden=true;tourI=-1;
   if(done&&!settings.tourDone){settings.tourDone=true;saveSettings();}
-  go(brandReady()?'upload':'settings');
+  const ok=brandReady();go(ok?'upload':'settings');
+  if(!ok)setTimeout(()=>spot('#segMode','Start here: choose how your logo appears',{nav:'settings'}),120);
 }
 function showTour(){
-  const s=TOUR[tourI];go(s[0]);clearHl();
-  const el=s[1]&&$(s[1]);if(el){el.classList.add('tour-hl');el.scrollIntoView({block:'center',behavior:'smooth'});}
-  const t=$('#tour');t.hidden=false;t.classList.toggle('lft',!!(s[1]&&s[1].startsWith('aside')));
-  t.innerHTML='<h3>'+esc(s[2])+'</h3><ul class="bullets">'+s[3].map(x=>'<li>'+x+'</li>').join('')+'</ul><div class="actions"><button class="btn sm" data-tour="prev"'+(tourI?'':' disabled')+'>Back</button><button class="btn sm primary" data-tour="next">'+(tourI===TOUR.length-1?'Finish':'Next')+'</button><button class="linkbtn" data-tour="skip">Skip tour</button></div>';
+  const s=TOUR[tourI],last=tourI===TOUR.length-1,need=last&&!brandReady();
+  go(s[0],true);clearHl();
+  const el=s[1]&&$(s[1]);if(el){el.classList.add('tour-hl');el.scrollIntoView({block:el.getBoundingClientRect().height>innerHeight*.55?'start':'center',behavior:'smooth'});}
+  const bl=need?['<b>One thing is still missing: your logo or business name.</b> It is required before you can upload photos.','Press <b>Add my logo now</b> and follow the blue steps on the next screen.']:s[3];
+  const t=$('#tour');t.hidden=false;t.classList.remove('lft');
+  t.innerHTML='<p class="eyebrow">Step '+(tourI+1)+' of '+TOUR.length+'</p><h3>'+esc(need?'Last step: add your logo or name':s[2])+'</h3><ul class="bullets">'+bl.map(x=>'<li>'+x+'</li>').join('')+'</ul><div class="actions"><button class="btn sm" data-tour="prev"'+(tourI?'':' disabled')+'>Back</button><button class="btn sm primary" data-tour="next">'+(last?(need?'Add my logo now':'Finish'):'Next')+'</button><button class="linkbtn" data-tour="skip">Skip tour</button></div>';
 }
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-tour]');if(!a)return;const k=a.dataset.tour;
@@ -1459,7 +1555,132 @@ document.addEventListener('click',e=>{
   else if(k==='prev'&&tourI>0){tourI--;showTour();}
   else if(k==='skip')endTour(true);
 });
-$('#tbGuide').addEventListener('click',startTour);
+
+/* ---------- required-first gate, step strips, spotlight, Help me guide ---------- */
+function gateBlocks(p){return !isAdmin&&!brandReady()&&p!=='settings';}
+function renderGate(){
+  const blocked=!isAdmin&&!brandReady();
+  $$('.nav button[data-go]').forEach(b=>{
+    const lock=blocked&&b.dataset.go!=='settings';
+    b.classList.toggle('locked',lock);b.setAttribute('aria-disabled',String(lock));
+    if(lock)b.title='Add your logo or business name first';else b.removeAttribute('title');
+  });
+  const sb=$('.nav button[data-go="settings"]');
+  if(sb){sb.textContent=blocked?'Step 1: Add logo or name':'Settings';sb.classList.toggle('first',blocked);sb.style.order=blocked?'-1':'8';}
+  const rc=$('#reqCallout');if(rc)rc.hidden=!blocked;
+  $$('.req').forEach(x=>{x.hidden=!blocked;});
+  if(state&&state.page)renderSteps(state.page);
+}
+let spotEl=null,pinEl=null;
+function clearSpot(){
+  $$('.spot').forEach(x=>x.classList.remove('spot'));
+  if(pinEl){pinEl.remove();pinEl=null;}spotEl=null;
+  const b=$('#spotbar');if(b)b.hidden=true;
+}
+function placePin(){
+  if(!spotEl||!pinEl)return;
+  const r=spotEl.getBoundingClientRect(),w=pinEl.offsetWidth,h=pinEl.offsetHeight;
+  if(r.width<560&&r.right+w+16<innerWidth&&r.height<140){
+    pinEl.style.transform='none';pinEl.style.left=(r.right+12)+'px';pinEl.style.top=Math.max(54,r.top+r.height/2-h/2)+'px';
+  }else{
+    pinEl.style.transform='translateY(-100%)';pinEl.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';pinEl.style.top=Math.max(54+h,r.top-12)+'px';
+  }
+}
+function spot(sel,text,o){
+  o=o||{};const el=typeof sel==='string'?$(sel):sel;
+  if(!el||!el.getClientRects().length){toast('That is not on this screen right now.');return false;}
+  clearSpot();
+  if(o.nav){const nb=$('.nav button[data-go="'+o.nav+'"]');if(nb&&!nb.hidden)nb.classList.add('spot');}
+  el.classList.add('spot');spotEl=el;
+  pinEl=document.createElement('div');pinEl.className='pin';pinEl.textContent=text||'Look here';document.body.appendChild(pinEl);
+  el.scrollIntoView({block:el.getBoundingClientRect().height>innerHeight*.55?'start':'center',behavior:'smooth'});
+  placePin();
+  $('#spotTxt').textContent=text||'';$('#spotbar').hidden=false;
+  return true;
+}
+addEventListener('scroll',placePin,{passive:true});addEventListener('resize',placePin);
+$('#spotDone').addEventListener('click',clearSpot);
+$('#spotHelp').addEventListener('click',()=>{clearSpot();helpOpen(true);});
+
+const val=x=>typeof x==='function'?x():x;
+const STEPS={
+  settings:[
+    {h:'Pick your logo type',t:'Tap Upload my logo, or Use my business name.',sel:'#segMode',pin:'Step 1: tap one of these two buttons',done:()=>brandReady()},
+    {h:'Add it',t:()=>brand.mode==='image'?'Press Choose logo file and pick your logo.':'Type your business name in the box.',sel:()=>brand.mode==='image'?'#pickLogo':'#bName',pin:'Step 2: add your logo or name here',done:()=>brandReady()},
+    {h:'Check the preview',t:'Look at the box on the right. Your logo sits on a sample photo and at the top of your client gallery.',sel:'#stPreview',pin:'Step 3: this is how it will look',done:()=>brandReady()},
+    {h:'Continue to Upload',t:'Press the button at the bottom of the form.',sel:'#toUpload',pin:'Step 4: press this when you are happy'}],
+  upload:[
+    {h:'Name this shoot',t:'Type the client or event name.',sel:'#stName',pin:'Step 1: type the shoot name',done:()=>!!($('#sessionName')&&$('#sessionName').value.trim())||!!($('#targetShoot')&&$('#targetShoot').value)},
+    {h:'Place your logo',t:'Check the preview, then pick a position, colour and size.',sel:'#stPlace',pin:'Step 2: preview on the left, controls on the right'},
+    {h:'Add your photos',t:'Drop photos in the box or press Choose photos.',sel:'#drop',pin:'Step 3: drop photos here',done:()=>batch.items.length>0||batch.phase==='done'},
+    {h:'Copy your client link',t:'It appears after upload. Copy it and send it to your client.',sel:()=>batch.phase==='done'?'#doneCard':'#linkdock',pin:'Step 4: your client link',done:()=>batch.phase==='done'}],
+  gallery:[
+    {h:'Find your shoot',t:'Every upload batch is a shoot with its own client link.',sel:'#gal',pin:'Step 1: your shoots are listed here'},
+    {h:'Publish it',t:'Use this switch for new uploads, or the Publish button on a shoot.',sel:'#swPub',pin:'Step 2: publishing opens the link'},
+    {h:'Copy and share the link',t:'The link and share buttons sit on each shoot.',sel:'#gal',pin:'Step 3: copy the link on a shoot'},
+    {h:'Preview as client',t:'See exactly what your client sees.',sel:'#btnPreview',pin:'Step 4: preview button, top of every page'}],
+  setup:[
+    {h:'See your storage',t:'How much of your allowance you have used.',sel:'#stats',pin:'Step 1: your storage numbers'},
+    {h:'Ask for more',t:'Press More storage at the top when you need more space.',sel:'#tbReq',pin:'Step 2: ask BYINFORGH for more space',only:()=>CLOUDON}]
+};
+let stepSig='';
+function renderSteps(page,force){
+  const c=$('#steps-'+page),list=(STEPS[page]||[]).filter(x=>!x.only||x.only());
+  if(!c)return;
+  const html=list.map((x,i)=>{const d=x.done?!!x.done():false;
+    return '<button type="button" class="stp'+(d?' done':'')+'" data-stp="'+i+'"><span class="n">'+(d?'&#10003;':(i+1))+'</span><span class="tx"><b>'+esc(x.h)+'</b><span>'+esc(val(x.t))+'</span></span><em>Show me</em></button>';}).join('');
+  const sig=page+'|'+html;if(!force&&sig===stepSig)return;stepSig=sig;c.innerHTML=html;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-stp]');if(!b)return;
+  const list=(STEPS[state.page]||[]).filter(x=>!x.only||x.only()),x=list[+b.dataset.stp];if(!x)return;
+  spot(val(x.sel),x.pin||x.h,{});
+});
+let stRaf=0;const stLater=()=>{cancelAnimationFrame(stRaf);stRaf=requestAnimationFrame(()=>renderSteps(state.page));};
+document.addEventListener('input',stLater);document.addEventListener('click',()=>setTimeout(stLater,60));
+
+const HELP=[
+  {g:'First time? Do these in order',h:'1. Add your logo or business name',s:'Required. Settings tab, then the two buttons at the top of the form.',page:'settings',sel:'#segMode',pin:'Start here: choose how your logo appears',nav:'settings'},
+  {h:'2. Check the logo preview',s:'Settings, box on the right.',page:'settings',sel:'#stPreview',pin:'This is how your logo will look',nav:'settings'},
+  {h:'3. Name your shoot',s:'Upload tab, first blue step.',page:'upload',sel:'#stName',pin:'Type the client or event name',nav:'upload'},
+  {h:'4. Place your logo',s:'Upload tab, second blue step: position, colour, size.',page:'upload',sel:'#stPlace',pin:'Preview on the left, controls on the right',nav:'upload'},
+  {h:'5. Add your photos',s:'Upload tab, third blue step.',page:'upload',sel:'#drop',pin:'Drop photos here or press Choose photos',nav:'upload'},
+  {h:'6. Copy your client link',s:'Bottom of the left menu, and in the step 4 box after upload.',page:'upload',sel:'#linkdock',pin:'Your client link lives here',nav:'upload'},
+  {g:'Find things any time',h:'Preview as client',s:'Blue button at the top of every page.',sel:'#btnPreview',pin:'See what your client sees'},
+  {h:'Gallery and publishing',s:'Every shoot, its link, password and expiry.',page:'gallery',sel:'#swPub',pin:'Publish switch for new uploads',nav:'gallery'},
+  {h:'Your storage',s:'How much space you have used.',page:'setup',sel:'#stats',pin:'Your storage numbers',nav:'setup'},
+  {h:'Ask for more storage',s:'Button at the top of the page.',sel:'#tbReq',pin:'Ask BYINFORGH for more space',only:()=>CLOUDON},
+  {h:'Settings: change logo or name',s:'Bottom of the left menu once you are set up.',page:'settings',sel:'#stBrand',pin:'Change your logo or name here',nav:'settings'},
+  {h:'Master admin',s:'See studios, storage and requests.',page:'admin',sel:'#admStats',pin:'Platform overview',nav:'admin',admin:true},
+  {h:'Log out',s:'Bottom of the left menu.',sel:'#navOut',pin:'Log out here',only:()=>CLOUDON}
+];
+function helpItems(){return HELP.filter(x=>(!x.admin||isAdmin)&&(!x.only||x.only()));}
+function renderHelp(){
+  let g='',h='';
+  helpItems().forEach((x,i)=>{
+    if(x.g)h+='<p class="hp-g">'+esc(x.g)+'</p>';
+    const lock=x.page&&gateBlocks(x.page);
+    h+='<button type="button" class="hitem'+(lock?' locked':'')+'" data-hi="'+i+'"><b>'+esc(x.h)+'</b><span>'+esc(lock?'Locked until step 1 is done.':x.s)+'</span></button>';
+  });
+  $('#helpList').innerHTML=h;
+}
+function helpOpen(o){
+  const p=$('#helpPanel');p.classList.toggle('open',o);p.setAttribute('aria-hidden',String(!o));$('#helpTab').setAttribute('aria-expanded',String(o));
+  if(o){clearSpot();renderHelp();$('#helpClose').focus();}
+}
+$('#helpTab').addEventListener('click',()=>helpOpen(!$('#helpPanel').classList.contains('open')));
+$('#helpClose').addEventListener('click',()=>{helpOpen(false);$('#helpTab').focus();});
+$('#helpTour').addEventListener('click',startTour);
+$('#helpList').addEventListener('click',e=>{
+  const b=e.target.closest('[data-hi]');if(!b)return;
+  const x=helpItems()[+b.dataset.hi];if(!x)return;
+  let page=x.page,sel=x.sel,pin=x.pin||x.h,nav=x.nav;
+  if(page&&gateBlocks(page)){toast('Do step 1 first: add your logo or business name.');page='settings';sel='#segMode';pin='Start here: choose how your logo appears';nav='settings';}
+  helpOpen(false);
+  if(page)go(page);
+  setTimeout(()=>spot(sel,pin,{nav}),90);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#helpPanel').classList.contains('open'))helpOpen(false);else clearSpot();}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(tourI>=0)endTour(false);if(!$('#req').hidden)$('#req').hidden=true;}});
 /* ---------- QR code (byte mode, error correction M, versions 1 to 10) ---------- */
 const qrMatrix=(()=>{
