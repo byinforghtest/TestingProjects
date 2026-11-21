@@ -14,7 +14,7 @@
 <meta name="theme-color" content="#0D0E0F">
 <meta property="og:type" content="website"><meta property="og:site_name" content="OneLogoSpot"><meta property="og:title" content="OneLogoSpot, a BYINFORGH product">
 <meta property="og:description" content="Upload photos, add your studio logo automatically, and send clients a gallery.">
-<meta property="og:image" content="https://byinforghtest.github.io/TestingProjects/logo/og-image.png"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://onelogospot.byinforgh.com/"><meta property="og:image" content="https://onelogospot.byinforgh.com/logo/og-image.png"><meta name="twitter:card" content="summary_large_image">
 <title>OneLogoSpot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -309,6 +309,19 @@ td:first-child{font-weight:600;white-space:nowrap}
   .lb-nav{top:auto;bottom:12px;transform:none}
 }
 @media (max-width:520px){.panel{padding:16px}.planner{grid-template-columns:minmax(0,1fr)}.sheet{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* tidy layout and new features */
+body{font-size:14px;line-height:1.4}main{padding-block:0 56px}
+.topbar{position:sticky;top:0;z-index:15;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin:0 calc(var(--gutter)*-1) 16px;padding:8px var(--gutter);background:var(--bg);border-bottom:1px solid var(--line)}
+.page{gap:14px}.ph{gap:4px}.ph h1{font-size:clamp(20px,2.6vw,27px)}.lede{font-size:14px}.panel{padding:14px;gap:10px}.panel h2{font-size:13px}.sub{font-size:13px}
+.side{gap:20px;padding:20px 16px 16px}.nav button{padding:8px 11px;font-size:13.5px}.field{gap:4px}
+.field input[type=text],.field input[type=number],.field input[type=email],.field input[type=password],.field input[type=tel],.field select{padding:8px 10px}
+.up-grid,.cols2{gap:14px}.sess{gap:10px}.sess-title input{font-size:18px}.sheet{gap:10px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.btn{padding:8px 13px;font-size:13.5px}.btn.sm{padding:6px 10px;font-size:12.5px}th,td{padding:7px 10px}.drop{padding:24px 16px;gap:8px}.opt{padding:12px}.stat{padding:10px 12px}.stat b{font-size:20px}
+.share{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tour{position:fixed;right:16px;bottom:16px;z-index:60;width:min(360px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--ink);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.tour.lft{right:auto;left:284px}.tour h3{font:700 15px/1.2 var(--font-display)}.tour-hl{outline:3px solid var(--accent);outline-offset:4px;border-radius:6px}
+.lb-bar select{background:transparent;color:#F2F3F3;border:1px solid #3A3D40;border-radius:6px;padding:5px 6px}.lb-bar select option{color:#0D0E0F}
+@media (max-width:880px){.tour.lft{left:auto;right:16px}.topbar{position:static}main{padding-bottom:130px}.tour{bottom:calc(76px + env(safe-area-inset-bottom,0px))}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -330,6 +343,7 @@ td:first-child{font-weight:600;white-space:nowrap}
   </aside>
 
   <main>
+    <div class="topbar"><button class="btn sm primary" id="btnPreview" type="button">Preview as client</button><button class="btn sm" id="tbGuide" type="button">Guide</button><button class="btn sm" id="tbReq" data-act="req" type="button" hidden>More storage</button></div>
     <!-- UPLOAD -->
     <section class="page" id="p-upload">
       <header class="ph">
@@ -434,7 +448,7 @@ td:first-child{font-weight:600;white-space:nowrap}
           <div class="field" id="bWaWrap" hidden><label for="bWa">WhatsApp number for client picks (optional)</label><input id="bWa" type="tel" inputmode="numeric" maxlength="16" placeholder="233201234567" autocomplete="off"><p class="sub">Digits only, with country code and no plus sign. Clients who tap hearts can send their picks to this number.</p></div>
           <p class="sub" id="acctLine" hidden></p>
           <p class="sub">Changes apply to photos you upload next. Photos already uploaded keep the logo they were made with.</p>
-          <div class="actions"><button class="btn primary" id="toUpload" data-act="to-upload">Continue to Upload</button></div>
+          <div class="actions"><button class="btn primary" id="toUpload" data-act="to-upload">Continue to Upload</button><button class="btn" id="logoSvg" type="button">Save logo as SVG</button></div>
         </div>
         <aside class="panel" aria-label="Branding preview">
           <h2>Preview</h2>
@@ -476,6 +490,7 @@ td:first-child{font-weight:600;white-space:nowrap}
         </div>
         <div class="tbl"><table id="admTbl"><thead><tr><th>Studio</th><th>Status</th><th>Registered</th><th>Shoots</th><th>Photos</th><th>Storage used</th><th>Opens</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="admBody"></tbody></table></div>
       </div>
+      <div class="panel" id="admReq" hidden></div>
       <div class="panel" id="admDetail" hidden></div>
       <div class="panel" id="admLog"></div>
     </section>
@@ -494,6 +509,7 @@ td:first-child{font-weight:600;white-space:nowrap}
           <div class="stats" id="stats"></div>
           <div class="meter" aria-hidden="true"><i id="quotaBar" style="width:0"></i></div>
           <p class="sub" id="quotaTxt"></p>
+          <div class="actions"><button class="btn sm" data-act="req" type="button">Request more storage</button></div>
           <p class="sub" id="persistTxt"></p>
           <div class="actions" id="wipeRow"><button class="btn sm danger" data-act="wipe">Clear all photos on this device</button></div>
         </div>
@@ -630,9 +646,11 @@ td:first-child{font-weight:600;white-space:nowrap}
 
 <!-- LIGHTBOX -->
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
-  <div class="lb-bar"><span id="lbCap"></span><div class="grp"><button class="btn sm" id="lbFav" aria-pressed="false" hidden>Pick</button><button class="btn sm" id="lbDl">Download</button><button class="btn sm" id="lbDel" hidden>Remove photo</button><button class="btn sm" id="lbClose">Close</button></div></div>
+  <div class="lb-bar"><span id="lbCap"></span><div class="grp"><button class="btn sm" id="lbFav" aria-pressed="false" hidden>Pick</button><select id="lbFmt" aria-label="File type"><option value="jpg">JPEG</option><option value="png">PNG</option><option value="pdf">PDF</option></select><button class="btn sm" id="lbDl">Save</button><button class="btn sm" id="lbDel" hidden>Remove photo</button><button class="btn sm" id="lbClose">Close</button></div></div>
   <div class="lb-stage"><button class="lb-nav prev-b" id="lbPrev" aria-label="Previous photo">&#8592;</button><img id="lbImg" alt=""><button class="lb-nav next-b" id="lbNext" aria-label="Next photo">&#8594;</button></div>
 </div>
+<div class="qr" id="req" hidden role="dialog" aria-modal="true" aria-label="Request more storage"><div class="qr-card" style="text-align:left;align-items:stretch"><h2 style="font:700 16px var(--font-display);text-transform:uppercase">Request more storage</h2><p class="sub" id="reqInfo"></p><div class="field"><label for="reqMb">New total allowance</label><select id="reqMb"></select></div><div class="field"><label for="reqNote">Note (optional)</label><input id="reqNote" type="text" maxlength="300" placeholder="For example, 3,000 wedding photos"></div><p class="sub" id="reqMsg" role="status"></p><div class="actions"><button class="btn primary sm" id="reqSend" type="button">Send request</button><button class="btn sm" id="reqClose" type="button">Close</button></div></div></div>
+<div class="tour" id="tour" hidden role="dialog" aria-label="Platform guide"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="qr" id="qr" hidden role="dialog" aria-modal="true" aria-label="QR code"><div class="qr-card"><canvas id="qrCv" width="300" height="300"></canvas><p class="sub" id="qrCap"></p><div class="actions"><button class="btn primary sm" id="qrDl">Save QR image</button><button class="btn sm" id="qrClose">Close</button></div></div></div>
 
@@ -1048,7 +1066,7 @@ function renderDone(){
   card.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h2>${n} photo${n>1?'s':''} ready</h2>${pillHtml(s)}</div>`+
   `<p class="sub">${esc(s.title)}. ${s.published?'Send this link to your client.':'This shoot is a draft. Publish it in the gallery to open the link.'}</p>`+
   `<div class="linkrow"><input id="doneInput" readonly value="${esc(link)}" aria-label="Client link"><button class="btn primary" data-act="copy-done">Copy link</button></div>`+
-  `${CLOUDON?'<p class="sub">Your client can open this link on any phone or computer and download the photos.</p>':'<p class="notice">Test version: this link opens on this device only. To send these photos to a client now, use Download gallery file.</p>'}<div class="actions">${CLOUDON?`<a class="btn primary" href="${waLink(s)}" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn" data-act="qr-done">QR code</button>`:''}<button class="btn${CLOUDON?'':' primary'}" data-act="export-done">Download gallery file</button><button class="btn" data-act="to-gallery">Open gallery</button>${s.published?'<button class="btn" data-act="preview-done">Preview as client</button>':''}</div>`;
+  `${CLOUDON?shareHtml(link,s.title)+'<p class="sub">Your client can open this link on any phone or computer and download the photos.</p>':'<p class="notice">Test version: this link opens on this device only. To send these photos to a client now, use Download gallery file.</p>'}<div class="actions">${CLOUDON?`<a class="btn primary" href="${waLink(s)}" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn" data-act="qr-done">QR code</button>`:''}<button class="btn${CLOUDON?'':' primary'}" data-act="export-done">Download gallery file</button><button class="btn" data-act="to-gallery">Open gallery</button>${s.published?'<button class="btn" data-act="preview-done">Preview as client</button>':''}</div>`;
 }
 document.addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
@@ -1114,9 +1132,9 @@ function renderGallery(){
     const ph=sessPhotos(s.id),link=linkFor(s),bytes=ph.reduce((t,p)=>t+p.size,0);
     return `<article class="panel sess" data-s="${s.id}">`+
     `<div class="sess-head"><div class="sess-title"><input class="title-in" data-id="${s.id}" value="${esc(s.title)}" maxlength="60" aria-label="Shoot name"><div class="meta">${pillHtml(s)}<span>${fmtDate(s.createdAt)}</span><span class="mono">${ph.length} photos</span><span class="mono">${fmtBytes(bytes)}</span>${CLOUDON?metaCloud(s):''}${s.example?'<span class="example-tag">Example</span>':''}</div></div>`+
-    `<div class="sess-actions"><button class="btn sm" data-act="toggle-pub" data-id="${s.id}">${s.published?'Unpublish':'Publish'}</button><button class="btn sm" data-act="preview" data-id="${s.id}"${s.published?'':' disabled'}>Preview as client</button><button class="btn sm" data-act="export" data-id="${s.id}">Download gallery file</button><button class="btn sm danger" data-act="del-session" data-id="${s.id}">Delete shoot</button></div></div>`+
+    `<div class="sess-actions"><button class="btn sm" data-act="toggle-pub" data-id="${s.id}">${s.published?'Unpublish':'Publish'}</button><button class="btn sm" data-act="preview" data-id="${s.id}"${s.published?'':' disabled'}>Preview as client</button><button class="btn sm" data-act="export" data-id="${s.id}">Download gallery file</button><button class="btn sm" data-act="pdf-shoot" data-id="${s.id}">Save as PDF</button><button class="btn sm danger" data-act="del-session" data-id="${s.id}">Delete shoot</button></div></div>`+
     `<div class="linkrow"><input readonly value="${esc(link)}" aria-label="Client link for ${esc(s.title)}"><button class="btn sm primary" data-act="copy-link" data-id="${s.id}">Copy link</button>${CLOUDON?`<a class="btn sm" href="${waLink(s)}" target="_blank" rel="noopener">WhatsApp</a><button class="btn sm" data-act="qr" data-id="${s.id}">QR code</button>`:''}</div>`+
-    (CLOUDON?ctrlsHtml(s):`<p class="sub">Test version: this link opens on this device only. To send a client these photos now, use Download gallery file.</p>`)+
+    (CLOUDON?shareHtml(link,s.title):'')+(CLOUDON?ctrlsHtml(s):`<p class="sub">Test version: this link opens on this device only. To send a client these photos now, use Download gallery file.</p>`)+
     `<div class="sheet">${ph.slice(0,shownFor(s.id)).map((p,i)=>`<button class="ph-card" data-act="open-photo" data-id="${s.id}" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><div class="im"><img src="${urlFor(p,'t')}" alt="${esc(p.name)}" loading="lazy" decoding="async"></div><div class="cap"><span>${frameLabel(p.n)}</span><span>${p.w}×${p.h}</span></div></button>`).join('')}</div>${ph.length>shownFor(s.id)?`<div class="actions"><button class="btn" data-act="more-photos" data-id="${s.id}">Show more photos (${ph.length-shownFor(s.id)} left)</button></div>`:''}`+
     `</article>`;
   }).join('');
@@ -1134,6 +1152,7 @@ $('#gal').addEventListener('click',async e=>{
   else if(act==='toggle-pub'&&s){s.published=!s.published;if(!(await persistSession(s))){s.published=!s.published;renderGallery();renderDock();return;}renderGallery();renderDock();toast(s.published?'Shoot is live. The link is open.':'Shoot is a draft. The link is closed.');}
   else if(act==='preview'&&s){openClient(s.code,true);}
   else if(act==='export'&&s){exportShoot(s,a);}
+  else if(act==='pdf-shoot'&&s){pdfPhotos(sessPhotos(s.id),s.title,a);}
   else if(act==='more-photos'&&s){shownMap[s.id]=shownFor(s.id)+240;renderGallery();}
   else if(act==='open-photo'&&s){openLightbox(sessPhotos(s.id),+a.dataset.i,'studio');}
   else if(act==='del-session'&&s){
@@ -1178,7 +1197,7 @@ $('#lbPrev').addEventListener('click',()=>stepLb(-1));
 $('.lb-stage').addEventListener('click',e=>{if(e.target===e.currentTarget)closeLb();});
 const slug=t=>String(t||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'gallery';
 function saveBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
-$('#lbDl').addEventListener('click',()=>{const p=lb.list[lb.i];if(!p)return;const nm=slug((p.name||frameLabel(p.n)).replace(/\.[^.]+$/,''))+'-logo.jpg';if(p.uUrl)dlUrl(p.uUrl,nm);else saveBlob(p.blob,nm);toast('Photo saved');});
+
 $('#lbNext').addEventListener('click',()=>stepLb(1));
 $('#lbDel').addEventListener('click',async e=>{
   const b=e.currentTarget;
@@ -1320,6 +1339,128 @@ async function zipPhotos(list,title,btn){
 }
 
 /* ---------- QR code ---------- */
+/* ---------- save as PDF, share, request storage, guide ---------- */
+function pdfBlob(imgs){
+  const enc=new TextEncoder(),parts=[],off=[];let len=0;
+  const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length;};
+  const obj=(n,body)=>{off[n]=len;add(n+' 0 obj\n');add(body);add('\nendobj\n');};
+  add('%PDF-1.4\n');
+  obj(1,'<</Type/Catalog/Pages 2 0 R>>');
+  obj(2,'<</Type/Pages/Kids ['+imgs.map((_,i)=>(3+i*3)+' 0 R').join(' ')+']/Count '+imgs.length+'>>');
+  imgs.forEach((im,i)=>{
+    const q=3+i*3,pw=Math.round(im.w*0.75),ph=Math.round(im.h*0.75),c='q '+pw+' 0 0 '+ph+' 0 0 cm /I Do Q';
+    obj(q,'<</Type/Page/Parent 2 0 R/MediaBox [0 0 '+pw+' '+ph+']/Resources<</XObject<</I '+(q+2)+' 0 R>>>>/Contents '+(q+1)+' 0 R>>');
+    obj(q+1,'<</Length '+c.length+'>>\nstream\n'+c+'\nendstream');
+    off[q+2]=len;add((q+2)+' 0 obj\n<</Type/XObject/Subtype/Image/Width '+im.w+'/Height '+im.h+'/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length '+im.u8.length+'>>\nstream\n');add(im.u8);add('\nendstream\nendobj\n');
+  });
+  const n=3+imgs.length*3,x=len;add('xref\n0 '+n+'\n0000000000 65535 f \n');
+  for(let k=1;k<n;k++)add(String(off[k]).padStart(10,'0')+' 00000 n \n');
+  add('trailer\n<</Size '+n+'/Root 1 0 R>>\nstartxref\n'+x+'\n%%EOF');
+  return new Blob(parts,{type:'application/pdf'});
+}
+async function pdfPhotos(list,title,btn){
+  if(btn.disabled)return;const old=btn.textContent;btn.disabled=true;
+  try{
+    for(let k=0;k*100<list.length;k++){
+      const part=list.slice(k*100,k*100+100),imgs=[];
+      for(let i=0;i<part.length;i++){btn.textContent='Preparing '+(k*100+i+1)+' of '+list.length;const b=await getBlob(part[i]);imgs.push({u8:new Uint8Array(await b.arrayBuffer()),w:part[i].w,h:part[i].h});}
+      saveBlob(pdfBlob(imgs),slug(title)+(list.length>100?'-part-'+(k+1):'')+'.pdf');await sleep(500);
+    }
+    toast('PDF saved');
+  }catch(e){toast('Could not build the PDF. Try again.');}
+  btn.disabled=false;btn.textContent=old;
+}
+$('#lbDl').addEventListener('click',async()=>{
+  const p=lb.list[lb.i];if(!p)return;const f=$('#lbFmt').value,nm=slug((p.name||frameLabel(p.n)).replace(/\.[^.]+$/,''))+'-logo';
+  try{
+    const blob=await getBlob(p);
+    if(f==='jpg')saveBlob(blob,nm+'.jpg');
+    else if(f==='png'){const bm=await loadBitmap(blob),c=document.createElement('canvas');[c.width,c.height]=dims(bm);c.getContext('2d').drawImage(bm,0,0);saveBlob(await toBlob(c,'image/png'),nm+'.png');}
+    else saveBlob(pdfBlob([{u8:new Uint8Array(await blob.arrayBuffer()),w:p.w,h:p.h}]),nm+'.pdf');
+    toast('Saved as '+f.toUpperCase());
+  }catch(e){toast('Could not save that file. Try again.');}
+});
+$('#logoSvg').addEventListener('click',()=>{
+  if(!brandReady()){toast('Add your logo first.');return;}
+  const X='xmlns="http://www.w3.org/2000/svg"';let svg;
+  if(brand.mode==='image'&&brand.img)svg='<svg '+X+' viewBox="0 0 '+brand.iw+' '+brand.ih+'" width="'+brand.iw+'" height="'+brand.ih+'"><image width="'+brand.iw+'" height="'+brand.ih+'" href="'+brand.img+'"/></svg>';
+  else{const L=textLayout(),ff='font-family="Montserrat,Arial,sans-serif"';
+    svg='<svg '+X+' viewBox="0 0 '+L.w1.toFixed(0)+' '+L.H+'"><text x="0" y="76" '+ff+' font-weight="800" font-size="100" fill="#000">'+esc(L.n)+'</text>'+(L.l2?'<text x="0" y="'+(76+26+L.fs2*.72).toFixed(0)+'" '+ff+' font-size="'+L.fs2.toFixed(1)+'" letter-spacing="'+L.sp2.toFixed(1)+'" fill="#000">'+esc(L.l2)+'</text>':'')+'</svg>';}
+  saveBlob(new Blob([svg],{type:'image/svg+xml'}),slug(brandName()||'logo')+'.svg');toast('Logo saved as SVG');
+});
+function shareHtml(link,title){
+  const b=(k,l)=>'<button class="btn sm" type="button" data-sh="'+k+'" data-link="'+esc(link)+'" data-title="'+esc(title)+'">'+l+'</button>';
+  return '<div class="share" role="group" aria-label="Share link"><span class="lbl">Share</span>'+b('wa','WhatsApp')+b('fb','Facebook')+b('x','X')+b('tg','Telegram')+b('mail','Email')+(navigator.share?b('native','More'):'')+'</div>';
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-sh]');if(!a)return;
+  const l=a.dataset.link,t='Your photos: '+a.dataset.title,L=encodeURIComponent(l),T=encodeURIComponent(t),k=a.dataset.sh;
+  if(k==='native'){navigator.share({title:t,url:l}).catch(()=>{});return;}
+  if(k==='mail'){location.href='mailto:?subject='+T+'&body='+L;return;}
+  window.open({wa:'https://wa.me/?text='+T+'%20'+L,fb:'https://www.facebook.com/sharer/sharer.php?u='+L,x:'https://twitter.com/intent/tweet?text='+T+'&url='+L,tg:'https://t.me/share/url?url='+L+'&text='+T}[k],'_blank','noopener');
+});
+$('#btnPreview').addEventListener('click',()=>{const s=activeSession();if(!s||!s.published){toast('Publish a shoot first, then preview it.');return;}openClient(s.code,true);});
+const REQ_TIERS=[1024,2048,5120,10240,25600,51200,102400];
+async function openReq(){
+  if(!CLOUDON||!studioRow){toast('Storage requests work on the live site.');return;}
+  const lim=studioRow.storage_limit_mb||0,used=state.photos.reduce((t,p)=>t+p.size+(p.thumbSize||0),0),mb=m=>m>=1024?(m/1024)+' GB':m+' MB';
+  $('#reqInfo').textContent='You are using '+fmtBytes(used)+' of '+mb(lim)+'.';
+  $('#reqMb').innerHTML=REQ_TIERS.filter(m=>m>lim).map(m=>'<option value="'+m+'">'+mb(m)+' total</option>').join('')||'<option value="">You already have the top tier</option>';
+  $('#reqMsg').textContent='';$('#reqSend').disabled=false;$('#req').hidden=false;
+  try{const r=await http('/rest/v1/storage_requests?select=requested_mb,status&order=created_at.desc&limit=1');
+    if(r[0]&&r[0].status==='pending'){$('#reqMsg').textContent='Your request for '+mb(r[0].requested_mb)+' is waiting for BYINFORGH to review.';$('#reqSend').disabled=true;}
+    else if(r[0])$('#reqMsg').textContent='Last request: '+mb(r[0].requested_mb)+', '+r[0].status+'.';}catch(e){}
+}
+$('#reqSend').addEventListener('click',async()=>{
+  const mb=+$('#reqMb').value;if(!mb)return;$('#reqSend').disabled=true;
+  try{await http('/rest/v1/storage_requests',{method:'POST',json:{studio_id:sess.user.id,requested_mb:mb,note:($('#reqNote').value||'').slice(0,300)},headers:{Prefer:'return=minimal'}});
+    $('#reqMsg').textContent='Request sent. BYINFORGH will review it.';toast('Storage request sent');}
+  catch(e){$('#reqMsg').textContent=(e.status===409||/duplicate|unique/i.test(e.message))?'You already have a request waiting.':'Could not send the request. Try again soon.';$('#reqSend').disabled=false;}
+});
+$('#reqClose').addEventListener('click',()=>{$('#req').hidden=true;});
+document.addEventListener('click',e=>{if(e.target.closest('[data-act=req]'))openReq();});
+function renderReq(){
+  const el=$('#admReq'),rq=adm.req||[];el.hidden=!rq.length;if(!rq.length)return;
+  el.innerHTML='<h2>Storage requests</h2><div class="tbl"><table><thead><tr><th>Studio</th><th>Wants</th><th>Using now</th><th>Note</th><th>Actions</th></tr></thead><tbody>'+rq.map(r=>{const st=adm.rows.find(x=>x.id===r.studio_id)||{};
+    return '<tr><td>'+esc(st.name||st.email||'Studio')+'<br><span class="sub">'+esc(st.email||'')+'</span></td><td class="mono">'+fmtMB(r.requested_mb)+'</td><td class="mono">'+fmtBytes(st.storage_bytes||0)+' of '+fmtMB(st.limit_mb||0)+'</td><td>'+esc(r.note||'')+'</td><td><div class="actions"><button class="btn sm primary" data-rq="ok" data-id="'+r.id+'" type="button">Approve</button><button class="btn sm" data-rq="no" data-id="'+r.id+'" type="button">Decline</button></div></td></tr>';}).join('')+'</tbody></table></div>';
+}
+$('#admReq').addEventListener('click',async e=>{
+  const a=e.target.closest('[data-rq]');if(!a)return;const r=(adm.req||[]).find(x=>x.id===a.dataset.id);if(!r)return;
+  try{if(a.dataset.rq==='ok')await admSetLimit(r.studio_id,r.requested_mb);
+    await http('/rest/v1/storage_requests?id=eq.'+r.id,{method:'PATCH',json:{status:a.dataset.rq==='ok'?'approved':'declined',decided_at:new Date().toISOString()},headers:{Prefer:'return=minimal'}});
+    toast(a.dataset.rq==='ok'?'Approved':'Declined');await admLoad();}catch(err){toast(err.message||'Something went wrong');}
+});
+const TOUR=[
+['settings','#segMode','Step 1 of 8: Add your logo',['<b>Upload my logo</b> puts your own logo file on every photo. A PNG with a see-through background works best.','<b>Use my business name</b> turns your name into a bold text logo.','<b>Continue to Upload</b> saves it and takes you to step 2.']],
+['upload','#drop','Step 2 of 8: Upload photos',['Type the <b>client or shoot name</b> first.','Drop photos here or press <b>Choose photos</b>.','Keep <b>Add the logo as soon as photos are chosen</b> on for speed, or switch it off to check the placement first.']],
+['upload','aside[aria-label="Logo placement"]','Step 3 of 8: Place your logo',['The grid sets the <b>position</b>. <b>Tiled</b> repeats the logo across the photo, good for proofs.','<b>Colour</b>: Auto picks black or white to suit the photo.','<b>Size, Opacity</b> and <b>Edge margin</b> fine-tune it. <b>Economy</b> saves storage, <b>Standard</b> keeps more detail.']],
+['upload','#linkdock','Step 4 of 8: Your client link',['After an upload your link appears here and on the Upload page.','<b>Copy</b> it, share it on WhatsApp, Facebook, X, Telegram or email, or show the <b>QR code</b> for people to scan.']],
+['gallery','#swPub','Step 5 of 8: Manage your gallery',['<b>Publish</b> opens a link. <b>Unpublish</b> closes it.','Each shoot can have an <b>expiry date</b> and a <b>password</b>.','<b>Save as PDF</b>, <b>Download gallery file</b> and <b>Delete shoot</b> sit on each shoot. Open any photo to save it as JPEG, PNG or PDF.']],
+['gallery','#btnPreview','Step 6 of 8: Preview as your client',['<b>Preview as client</b> is always at the top of every page. It shows exactly what your client sees.','Clients tap the <b>heart</b> on favourites, send their picks to your WhatsApp, and can download everything.']],
+['setup','#stats','Step 7 of 8: Your storage',['See how much of your allowance you have used.','Press <b>Request more storage</b> whenever you need more. BYINFORGH reviews each request.']],
+['upload',null,'Step 8 of 8: You are ready',['Keep your original photos. Gallery copies are not a backup.','Open this guide again any time with <b>Guide</b> at the top.']]];
+let tourI=-1;
+const clearHl=()=>$$('.tour-hl').forEach(x=>x.classList.remove('tour-hl'));
+function startTour(){tourI=0;showTour();}
+function endTour(done){
+  clearHl();$('#tour').hidden=true;tourI=-1;
+  if(done&&!settings.tourDone){settings.tourDone=true;saveSettings();}
+  go(brandReady()?'upload':'settings');
+}
+function showTour(){
+  const s=TOUR[tourI];go(s[0]);clearHl();
+  const el=s[1]&&$(s[1]);if(el){el.classList.add('tour-hl');el.scrollIntoView({block:'center',behavior:'smooth'});}
+  const t=$('#tour');t.hidden=false;t.classList.toggle('lft',!!(s[1]&&s[1].startsWith('aside')));
+  t.innerHTML='<h3>'+esc(s[2])+'</h3><ul class="bullets">'+s[3].map(x=>'<li>'+x+'</li>').join('')+'</ul><div class="actions"><button class="btn sm" data-tour="prev"'+(tourI?'':' disabled')+'>Back</button><button class="btn sm primary" data-tour="next">'+(tourI===TOUR.length-1?'Finish':'Next')+'</button><button class="linkbtn" data-tour="skip">Skip tour</button></div>';
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-tour]');if(!a)return;const k=a.dataset.tour;
+  if(k==='next'){if(tourI>=TOUR.length-1)endTour(true);else{tourI++;showTour();}}
+  else if(k==='prev'&&tourI>0){tourI--;showTour();}
+  else if(k==='skip')endTour(true);
+});
+$('#tbGuide').addEventListener('click',startTour);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(tourI>=0)endTour(false);if(!$('#req').hidden)$('#req').hidden=true;}});
 /* ---------- QR code (byte mode, error correction M, versions 1 to 10) ---------- */
 const qrMatrix=(()=>{
   const EC=[0,[10,[[1,16]]],[16,[[1,28]]],[26,[[1,44]]],[18,[[2,32]]],[24,[[2,43]]],[16,[[4,27]]],[18,[[4,31]]],[22,[[2,38],[2,39]]],[22,[[3,36],[2,37]]],[26,[[4,43],[1,44]]]];
@@ -1598,7 +1739,7 @@ async function openCloudClient(code,preview,banner,pw,wrong){
   Object.assign(cc,{code,title:g.title,studio:g.studio,photos,fav:loadFavs(code)});
   const studioName=(g.studio&&g.studio.name)||'the studio';
   root.innerHTML=banner+`<div class="cl-top">${bh}<span class="eyebrow">Private gallery</span></div>`+
-  `<div class="cl-hero"><p class="eyebrow">Your photos</p><h1>${esc(g.title)}</h1><p class="mono">${photos.length} photos · ${fmtDate(Date.parse(g.created_at))}</p><div class="cl-actions"><button class="btn" id="zipBtn" type="button">Download all (ZIP)</button></div><div class="cl-actions" id="zipParts" hidden></div><p class="sub">Tap the heart on your favourites, then send your picks to ${esc(studioName)} on WhatsApp.</p></div>`+
+  `<div class="cl-hero"><p class="eyebrow">Your photos</p><h1>${esc(g.title)}</h1><p class="mono">${photos.length} photos · ${fmtDate(Date.parse(g.created_at))}</p><div class="cl-actions"><button class="btn" id="zipBtn" type="button">Download all (ZIP)</button><button class="btn" id="pdfBtn" type="button">Download all (PDF)</button></div><div class="cl-actions" id="zipParts" hidden></div><p class="sub">Tap the heart on your favourites, then send your picks to ${esc(studioName)} on WhatsApp.</p></div>`+
   `<div class="masonry">${photos.slice(0,PAGE).map((p,i)=>`<div class="mi"><button class="open" data-i="${i}" aria-label="Open ${frameLabel(p.n)}"><img src="${esc(p.tUrl)}" width="${Math.round(p.w*480/Math.max(p.w,p.h))}" height="${Math.round(p.h*480/Math.max(p.w,p.h))}" alt="Photo ${i+1}" loading="lazy" decoding="async"></button><button class="heart" data-n="${p.n}" aria-pressed="${cc.fav.has(p.n)}" aria-label="Pick ${frameLabel(p.n)}">&#9829;</button></div>`).join('')}</div>`+
   `<div class="pickbar" id="pickbar" hidden><span id="pickTxt"></span><span class="grp"><button class="btn sm ghost" id="pickClear">Clear</button><button class="btn sm primary" id="pickSend">Send picks on WhatsApp</button></span></div>`+
   `<div class="cl-foot">These photos carry the ${esc(studioName)} logo. Contact the studio for full-resolution files. Private gallery: shared only with people who hold this link. ${CL_FOOT}</div>`;
@@ -1616,6 +1757,7 @@ async function openCloudClient(code,preview,banner,pw,wrong){
     box.hidden=!box.hidden;
   });
   $('#pickSend').addEventListener('click',sendPicks);
+  $('#pdfBtn').addEventListener('click',e=>pdfPhotos(photos,g.title,e.currentTarget));
   $('#pickClear').addEventListener('click',()=>{cc.fav.clear();saveFavs();syncFavs();});
 }
 $('#lbFav').addEventListener('click',()=>{const p=lb.list[lb.i];if(p)toggleFav(p.n);});
@@ -1697,10 +1839,11 @@ async function enterStudio(){
   syncControls();redrawPreview();renderDock();renderNavCount();renderBrandBanner();
   $('#navAdmin').hidden=!isAdmin;
   go(isAdmin?'admin':(brandReady()?'upload':'settings'));
+  if(!isAdmin&&!settings.tourDone)setTimeout(startTour,500);
 }
 async function cloudInit(){
   $$('.local-only').forEach(e=>{e.hidden=true;});
-  $('#navOut').hidden=false;$('#bWaWrap').hidden=false;
+  $('#navOut').hidden=false;$('#bWaWrap').hidden=false;$('#tbReq').hidden=false;
   $('#setupLede').textContent='Your photos are stored in the cloud, so client links open on any phone or computer.';
   $('#sampleH').textContent='Your storage';$('#wipeRow').hidden=true;
   $('#cannotPanel').innerHTML='<h2>How your account works</h2><ul class="bullets"><li><b>Your photos stay yours.</b> Only you can upload, change or delete them. Clients see a shoot only through its link.</li><li><b>Links can expire.</b> Set an expiry date or a password on any shoot in the Gallery.</li><li><b>Your logo is on every client copy.</b> The photo you upload is resized and marked in your browser before it is saved.</li></ul>';
@@ -1725,7 +1868,7 @@ function renderUsage(){
   if(!CLOUDON||!studioRow||!studioRow.storage_limit_mb){el.hidden=true;return;}
   const used=state.photos.reduce((t,p)=>t+p.size+(p.thumbSize||0),0),lim=studioRow.storage_limit_mb*1048576,pct=used/lim*100;
   el.hidden=false;el.style.color=pct>=80?'var(--warn)':'';
-  el.textContent='Storage: '+fmtBytes(used)+' of '+fmtBytes(lim)+' used.'+(pct>=80?' Almost full. Delete old shoots or ask BYINFORGH for more space.':'');
+  el.innerHTML='Storage: '+fmtBytes(used)+' of '+fmtBytes(lim)+' used.'+(pct>=80?' Almost full.':'')+' <button class="linkbtn" data-act="req" type="button">Request more storage</button>';
 }
 
 /* ---------- big galleries: paging, parts, long pick lists ---------- */
@@ -1784,6 +1927,7 @@ async function admLoad(){
   try{
     const [rows,stats,log]=await Promise.all([rpc('admin_list_studios'),rpc('admin_stats'),rpc('admin_recent_log')]);
     adm.rows=rows||[];adm.stats=stats;adm.log=log||[];
+    try{adm.req=await http('/rest/v1/storage_requests?status=eq.pending&select=id,studio_id,requested_mb,note,created_at&order=created_at.asc');}catch(e){adm.req=[];}
   }catch(e){toast('Could not load admin data. '+(e.message||''));}
   renderAdminAll();
   if(adm.open)await admDetail(adm.open,false);
@@ -1823,7 +1967,7 @@ function admVisible(){
   const q=adm.q.trim().toLowerCase();
   return adm.rows.filter(r=>ADM_FILTER[adm.filter](r)&&(!q||((r.name||'')+' '+(r.email||'')).toLowerCase().includes(q))).sort(ADM_SORT[adm.sort]);
 }
-function renderAdminTable(){
+function renderAdminTable(){renderReq();
   $('#admFilter').value=adm.filter;$('#admSort').value=adm.sort;
   const rows=admVisible();
   $('#admBody').innerHTML=rows.length?rows.map(admRow).join(''):'<tr><td colspan="9">No studios match.</td></tr>';
